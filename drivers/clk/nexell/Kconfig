@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0
+
+config COMMON_CLK_NEXELL
+	bool "Nexell S5P6818 clock support"
+	depends on (ARCH_NEXELL || COMPILE_TEST) && OF
+	default ARCH_NEXELL
+	help
+	  Enable the Common Clock Framework provider for the Nexell S5P6818.
+	  The driver reads the PLL state left by the boot ROM/U-Boot and exposes
+	  the S5P6818 CLKGEN peripheral clocks with standard clock cells.

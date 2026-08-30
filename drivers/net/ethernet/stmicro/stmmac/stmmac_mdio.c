@@ -246,6 +246,30 @@ static int stmmac_mdio_read(struct stmmac_priv *priv, int data, u32 value)
 	unsigned int mii_address = priv->hw->mii.addr;
 	unsigned int mii_data = priv->hw->mii.data;
 	u32 v;
+	int ret;
+
+	/*
+	 * S5P6818 follows the vendor/U-Boot read sequence: a C22 read
+	 * starts by writing only MII_ADDR.  Writing MII_DATA before a read
+	 * is unnecessary and can leave this older GMAC stuck on later PHY
+	 * status registers.
+	 */
+	if (priv->plat->mdio_no_data_write) {
+		ret = readl_poll_timeout_atomic(priv->ioaddr + mii_address, v,
+						!(v & MII_BUSY), 10, 10000);
+		if (ret)
+			return -EBUSY;
+
+		writel(value, priv->ioaddr + mii_address);
+
+		ret = readl_poll_timeout_atomic(priv->ioaddr + mii_address, v,
+						!(v & MII_BUSY), 10, 10000);
+		if (ret)
+			return -EBUSY;
+
+		/* Read the result immediately after BUSY clears, like U-Boot. */
+		return readl(priv->ioaddr + mii_data) & MII_DATA_MASK;
+	}
 
 	if (readl_poll_timeout(priv->ioaddr + mii_address, v, !(v & MII_BUSY),
 			       100, 10000))

@@ -38,6 +38,8 @@ SoC-specific documents
    marvell
    microchip
 
+   nexell/cross-cluster-sev
+
    netwinder
    nwfpe/index
 

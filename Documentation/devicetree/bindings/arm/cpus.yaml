@@ -239,6 +239,7 @@ properties:
           - marvell,mmp3-smp
           - mediatek,mt6589-smp
           - mediatek,mt81xx-tz-smp
+          - nexell,s5p6818-smp
           - qcom,gcc-msm8660
           - qcom,kpss-acc-v1
           - qcom,kpss-acc-v2

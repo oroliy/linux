@@ -1329,6 +1329,13 @@ static struct phy_driver realtek_drvs[] = {
 		.config_init	= &rtl8211e_config_init,
 		.config_intr	= &rtl8211e_config_intr,
 		.handle_interrupt = rtl821x_handle_interrupt,
+		/*
+		 * RTL8211E is a C22 PHY.  Leave MMD access unsupported so
+		 * phylib never walks the C22-indirect MMD registers; doing so
+		 * wedges the MII bus of the S5P6818 classic GMAC.
+		 */
+		.read_mmd	= genphy_read_mmd_unsupported,
+		.write_mmd	= genphy_write_mmd_unsupported,
 		.suspend	= genphy_suspend,
 		.resume		= genphy_resume,
 		.read_page	= rtl821x_read_page,

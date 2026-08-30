@@ -262,6 +262,14 @@ struct plat_stmmacenet_data {
 	int rss_en;
 	int mac_port_sel_speed;
 	int has_xgmac;
+	/*
+	 * S5P6818 (dwmac-nexell) uses the vendor/U-Boot MII read sequence:
+	 * only MII_ADDR is written and MII_DATA is read back as soon as
+	 * BUSY clears.  Other platforms keep the generic sequence, which
+	 * pre-writes MII_DATA and can leave this older GMAC stuck on the
+	 * C22-indirect MMD access issued by phylib.
+	 */
+	bool mdio_no_data_write;
 	u8 vlan_fail_q;
 	unsigned int eee_usecs_rate;
 	struct pci_dev *pdev;

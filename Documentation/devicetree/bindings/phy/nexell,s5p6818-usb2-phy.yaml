@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/phy/nexell,s5p6818-usb2-phy.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 USB 2.0 Host PHY
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 USB 2.0 host PHY owns the shared TIEOFF, clocks and reset
+  used by the EHCI and OHCI host controllers. PHY index 0 is the EHCI
+  instance and PHY index 1 is the OHCI instance.
+
+properties:
+  compatible:
+    const: nexell,s5p6818-usb-host-phy
+
+  reg:
+    maxItems: 1
+
+  clocks:
+    items:
+      - description: USB host controller clock
+      - description: USB host reference clock
+
+  clock-names:
+    items:
+      - const: usbhost
+      - const: usbhost-ref
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    const: host
+
+  '#phy-cells':
+    const: 1
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - '#phy-cells'
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/clock/nexell,s5p6818-clock.h>
+    usb-host-phy@c0011000 {
+        compatible = "nexell,s5p6818-usb-host-phy";
+        reg = <0xc0011000 0x100>;
+        clocks = <&clocks NEXELL_CLK_USBHOST>,
+                 <&clocks NEXELL_CLK_USBHOST_REF>;
+        clock-names = "usbhost", "usbhost-ref";
+        resets = <&nexell_reset 56>;
+        reset-names = "host";
+        #phy-cells = <1>;
+    };

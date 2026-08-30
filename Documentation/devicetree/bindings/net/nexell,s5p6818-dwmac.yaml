@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/net/nexell,s5p6818-dwmac.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 DWMAC Ethernet Controller
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 Ethernet controller is a Synopsys DWMAC1000 block.  The
+  external RTL8211E PHY provides the RGMII delays via strap pins and has a
+  board-controlled reset GPIO.
+
+select:
+  properties:
+    compatible:
+      contains:
+        const: nexell,s5p6818-dwmac
+  required:
+    - compatible
+
+allOf:
+  - $ref: snps,dwmac.yaml#
+
+properties:
+  compatible:
+    const: nexell,s5p6818-dwmac
+
+  clocks:
+    items:
+      - description: GMAC main clock
+      - description: GMAC PCLK
+
+  clock-names:
+    items:
+      - const: stmmaceth
+      - const: pclk
+
+  resets:
+    maxItems: 1
+
+  reset-names:
+    const: stmmaceth
+
+  nexell,clock-controller:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: phandle of the Nexell clock controller containing GMAC CLKGEN
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    #include <dt-bindings/clock/nexell,s5p6818-clock.h>
+    ethernet@c0060000 {
+        compatible = "nexell,s5p6818-dwmac";
+        reg = <0xc0060000 0x2000>;
+        interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+        interrupt-names = "macirq";
+        clocks = <&clocks NEXELL_CLK_GMAC>, <&clocks NEXELL_CLK_GMAC_TX>;
+        clock-names = "stmmaceth", "pclk";
+        nexell,clock-controller = <&clocks>;
+        resets = <&nexell_reset 50>;
+        reset-names = "stmmaceth";
+        phy-mode = "rgmii";
+        max-speed = <1000>;
+        snps,clk-csr = <4>;
+        phy-handle = <&gmac_phy>;
+
+        mdio {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            ethernet-phy@4 {
+                reg = <4>;
+            };
+        };
+    };

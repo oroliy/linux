@@ -32,6 +32,15 @@ config CLKBLD_I8253
 config CLKSRC_MMIO
 	bool
 
+config NEXELL_TIMER
+	bool "Nexell S5P6818 timer driver"
+	depends on ARCH_NEXELL
+	default y
+	select CLKSRC_MMIO
+	select TIMER_OF
+	help
+	  Enables the timer driver for the Nexell S5P6818 timer block.
+
 config BCM2835_TIMER
 	bool "BCM2835 timer driver" if COMPILE_TEST
 	select CLKSRC_MMIO

@@ -10,6 +10,10 @@
 #include <asm/barrier.h>
 #include <asm/processor.h>
 
+#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
+extern bool nexell_s5p6818_poll_lock_wait;
+#endif
+
 /*
  * sev and wfe are ARMv6K extensions.  Uniprocessor ARMv6 may not have the K
  * extensions, so when running on UP, we have to patch these instructions away.
@@ -37,6 +41,18 @@
 #endif
 
 #define SEV		__ALT_SMP_ASM(WASM(sev), WASM(nop))
+
+static __always_inline void arch_spin_lock_wait(void)
+{
+#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
+	if (unlikely(READ_ONCE(nexell_s5p6818_poll_lock_wait)))
+		cpu_relax();
+	else
+		wfe();
+#else
+	wfe();
+#endif
+}
 
 static inline void dsb_sev(void)
 {
@@ -71,7 +87,7 @@ static inline void arch_spin_lock(arch_spinlock_t *lock)
 	: "cc");
 
 	while (lockval.tickets.next != lockval.tickets.owner) {
-		wfe();
+		arch_spin_lock_wait();
 		lockval.tickets.owner = READ_ONCE(lock->tickets.owner);
 	}
 
@@ -141,6 +157,24 @@ static inline void arch_write_lock(arch_rwlock_t *rw)
 	unsigned long tmp;
 
 	prefetchw(&rw->lock);
+#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
+	if (unlikely(READ_ONCE(nexell_s5p6818_poll_lock_wait))) {
+		do {
+			__asm__ __volatile__("1:\tldrex\t%0, [%1]\n"
+			"\tteq\t%0, #0\n"
+			"\tstrexeq\t%0, %2, [%1]\n"
+			"\tteq\t%0, #0"
+			: "=&r" (tmp)
+			: "r" (&rw->lock), "r" (0x80000000)
+			: "cc");
+			if (tmp)
+				arch_spin_lock_wait();
+		} while (tmp);
+		/* Complete the lock acquisition ordering. */
+		smp_mb();
+		return;
+	}
+#endif
 	__asm__ __volatile__(
 "1:	ldrex	%0, [%1]\n"
 "	teq	%0, #0\n"
@@ -209,6 +243,23 @@ static inline void arch_read_lock(arch_rwlock_t *rw)
 	unsigned long tmp, tmp2;
 
 	prefetchw(&rw->lock);
+#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
+	if (unlikely(READ_ONCE(nexell_s5p6818_poll_lock_wait))) {
+		do {
+			__asm__ __volatile__("ldrex\t%0, [%2]\n"
+			"adds\t%0, %0, #1\n"
+			"strexpl\t%1, %0, [%2]"
+			: "=&r" (tmp), "=&r" (tmp2)
+			: "r" (&rw->lock)
+			: "cc");
+			if ((long)tmp < 0 || tmp2)
+				arch_spin_lock_wait();
+		} while ((long)tmp < 0 || tmp2);
+		/* Complete the lock acquisition ordering. */
+		smp_mb();
+		return;
+	}
+#endif
 	__asm__ __volatile__(
 "	.syntax unified\n"
 "1:	ldrex	%0, [%2]\n"

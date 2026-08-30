@@ -174,6 +174,13 @@ config RESET_NPCM
 	  This enables the reset controller driver for Nuvoton NPCM
 	  BMC SoCs.
 
+config RESET_NEXELL
+	bool "Nexell S5PXx18 reset controller"
+	depends on (ARCH_NEXELL || COMPILE_TEST) && OF
+	default ARCH_NEXELL
+	help
+	  This enables reset control for Nexell S5P6818 and related SoCs.
+
 config RESET_NUVOTON_MA35D1
 	bool "Nuvoton MA35D1 Reset Driver"
 	depends on ARCH_MA35 || COMPILE_TEST

@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/usb/nexell,s5p6818-usb.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 USB 2.0 Host Controllers
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 EHCI and OHCI host controllers use the shared USB 2.0 PHY
+  described by nexell,s5p6818-usb2-phy.yaml.
+
+select:
+  properties:
+    compatible:
+      enum:
+        - nexell,s5p6818-ehci
+        - nexell,s5p6818-ohci
+  required:
+    - compatible
+
+allOf:
+  - $ref: usb-hcd.yaml#
+
+properties:
+  compatible:
+    enum:
+      - nexell,s5p6818-ehci
+      - nexell,s5p6818-ohci
+
+  phys:
+    maxItems: 1
+
+  phy-names:
+    const: usb2-phy
+
+  companion:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: phandle of the paired OHCI companion for EHCI
+
+required:
+  - compatible
+  - phys
+  - phy-names
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    usb@c0030000 {
+        compatible = "nexell,s5p6818-ehci";
+        reg = <0xc0030000 0x1000>;
+        interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+        phys = <&usb_host_phy 0>;
+        phy-names = "usb2-phy";
+        companion = <&ohci>;
+    };

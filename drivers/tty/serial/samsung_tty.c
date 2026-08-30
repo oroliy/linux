@@ -2450,6 +2450,37 @@ static const struct s3c24xx_serial_drv_data s5pv210_serial_drv_data = {
 #define S5PV210_SERIAL_DRV_DATA	NULL
 #endif
 
+#ifdef CONFIG_ARCH_NEXELL
+static const struct s3c24xx_serial_drv_data nexell_serial_drv_data = {
+	.info = {
+		.name		= "Nexell S5P6818 UART",
+		.type		= TYPE_S3C6400,
+		.port_type	= PORT_S3C6400,
+		.iotype		= UPIO_MEM,
+		.has_divslot	= true,
+		.rx_fifomask	= S5PV210_UFSTAT_RXMASK,
+		.rx_fifoshift	= S5PV210_UFSTAT_RXSHIFT,
+		.rx_fifofull	= S5PV210_UFSTAT_RXFULL,
+		.tx_fifofull	= S5PV210_UFSTAT_TXFULL,
+		.tx_fifomask	= S5PV210_UFSTAT_TXMASK,
+		.tx_fifoshift	= S5PV210_UFSTAT_TXSHIFT,
+		.def_clk_sel	= S3C2410_UCON_CLKSEL0,
+		.num_clks	= 1,
+		.clksel_mask	= 0,
+		.clksel_shift	= 0,
+	},
+	.def_cfg = {
+		.ucon		= S5PV210_UCON_DEFAULT,
+		.ufcon		= S5PV210_UFCON_DEFAULT,
+		.has_fracval	= 1,
+	},
+	.fifosize = { 256, 64, 16, 16, 16, 16 },
+};
+#define NEXELL_SERIAL_DRV_DATA (&nexell_serial_drv_data)
+#else
+#define NEXELL_SERIAL_DRV_DATA NULL
+#endif
+
 #if defined(CONFIG_ARCH_EXYNOS)
 #define EXYNOS_COMMON_SERIAL_DRV_DATA				\
 	.info = {						\
@@ -2598,6 +2629,9 @@ static const struct platform_device_id s3c24xx_serial_driver_ids[] = {
 		.name		= "s5pv210-uart",
 		.driver_data	= (kernel_ulong_t)S5PV210_SERIAL_DRV_DATA,
 	}, {
+		.name		= "s5p6818-uart",
+		.driver_data	= (kernel_ulong_t)NEXELL_SERIAL_DRV_DATA,
+	}, {
 		.name		= "exynos4210-uart",
 		.driver_data	= (kernel_ulong_t)EXYNOS4210_SERIAL_DRV_DATA,
 	}, {
@@ -2626,6 +2660,8 @@ static const struct of_device_id s3c24xx_uart_dt_match[] = {
 		.data = S3C6400_SERIAL_DRV_DATA },
 	{ .compatible = "samsung,s5pv210-uart",
 		.data = S5PV210_SERIAL_DRV_DATA },
+	{ .compatible = "nexell,s5p6818-uart",
+		.data = NEXELL_SERIAL_DRV_DATA },
 	{ .compatible = "samsung,exynos4210-uart",
 		.data = EXYNOS4210_SERIAL_DRV_DATA },
 	{ .compatible = "samsung,exynos5433-uart",
@@ -2801,10 +2837,13 @@ static int __init s5pv210_early_console_setup(struct earlycon_device *device,
 
 OF_EARLYCON_DECLARE(s5pv210, "samsung,s5pv210-uart",
 			s5pv210_early_console_setup);
+OF_EARLYCON_DECLARE(s5p6818, "nexell,s5p6818-uart",
+			s5pv210_early_console_setup);
 OF_EARLYCON_DECLARE(exynos4210, "samsung,exynos4210-uart",
 			s5pv210_early_console_setup);
 OF_EARLYCON_DECLARE(artpec8, "axis,artpec8-uart",
 			s5pv210_early_console_setup);
+EARLYCON_DECLARE(s5p6818, s5pv210_early_console_setup);
 
 static int __init gs101_early_console_setup(struct earlycon_device *device,
 					    const char *opt)

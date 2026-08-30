@@ -70,6 +70,7 @@ obj-y				+= mvebu/
 obj-y				+= nomadik/
 obj-y				+= nuvoton/
 obj-y				+= nxp/
+obj-$(CONFIG_PINCTRL_NEXELL)	+= nexell/
 obj-$(CONFIG_PINCTRL_PXA)	+= pxa/
 obj-y				+= qcom/
 obj-$(CONFIG_ARCH_REALTEK)      += realtek/

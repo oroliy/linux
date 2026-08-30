@@ -1,0 +1,109 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/pinctrl/nexell,s5p6818-pinctrl.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 Pin Controller
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 pin controller exposes six GPIO banks (gpioa-gpioe and
+  the always-on "alive" bank) and pin multiplexing via child nodes that
+  name pins like "gpiod-14".
+
+properties:
+  compatible:
+    const: nexell,s5p6818-pinctrl
+
+  reg:
+    minItems: 6
+    maxItems: 6
+
+  '#pinctrl-cells':
+    const: 0
+
+  alive:
+    type: object
+    additionalProperties: false
+    properties:
+      gpio-controller: true
+      '#gpio-cells':
+        const: 2
+    required:
+      - gpio-controller
+      - '#gpio-cells'
+
+patternProperties:
+  '^gpio[a-e]$':
+    type: object
+    additionalProperties: false
+    properties:
+      gpio-controller: true
+      '#gpio-cells':
+        const: 2
+    required:
+      - gpio-controller
+      - '#gpio-cells'
+
+  '^.*-pins$':
+    type: object
+    description: pin configuration subnode
+    additionalProperties: false
+    properties:
+      nexell,pins:
+        $ref: /schemas/types.yaml#/definitions/string-array
+        description: array of pins to configure, e.g. "gpiod-14"
+      nexell,pin-function:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: mux function selection value
+      nexell,pin-pull:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: pull-up/pull-down selection value
+      nexell,pin-strength:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: drive strength selection value
+      nexell,pin-dir:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: pin direction (1 = output, 0 = input)
+      nexell,pin-val:
+        $ref: /schemas/types.yaml#/definitions/uint32
+        description: output level driven on the pin
+    anyOf:
+      - required:
+          - nexell,pins
+    required:
+      - nexell,pins
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    pinctrl@c001a000 {
+        compatible = "nexell,s5p6818-pinctrl";
+        reg = <0xc001a000 0x1000>,
+              <0xc001b000 0x1000>,
+              <0xc001c000 0x1000>,
+              <0xc001d000 0x1000>,
+              <0xc001e000 0x1000>,
+              <0xc0010800 0x0200>;
+        #pinctrl-cells = <0>;
+
+        gpioa: gpioa {
+            gpio-controller;
+            #gpio-cells = <2>;
+        };
+
+        uart0_pins: uart0-pins {
+            nexell,pins = "gpiod-14", "gpiod-18";
+            nexell,pin-function = <1>;
+            nexell,pin-pull = <2>;
+            nexell,pin-strength = <0>;
+        };
+    };

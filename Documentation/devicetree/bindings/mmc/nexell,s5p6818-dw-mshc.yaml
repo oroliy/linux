@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/mmc/nexell,s5p6818-dw-mshc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 DesignWare Mobile Storage Host Controller
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 MMC/SD controller is a Synopsys DesignWare MMC block with
+  Nexell-specific clock delay tuning registers.
+
+allOf:
+  - $ref: synopsys-dw-mshc.yaml
+
+properties:
+  compatible:
+    const: nexell,s5p6818-dw-mshc
+
+  nexell,drive-delay:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 255
+    description: drive clock delay tap value
+
+  nexell,drive-shift:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 3
+    description: drive clock delay shift value
+
+  nexell,sample-delay:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 255
+    description: sample clock delay tap value
+
+  nexell,sample-shift:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 3
+    description: sample clock delay shift value
+
+  nexell,mmc-boost:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 0
+    maximum: 1
+    description: select the higher clock divider (1) or lower (0)
+
+required:
+  - compatible
+
+unevaluatedProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/interrupt-controller/irq.h>
+    #include <dt-bindings/interrupt-controller/arm-gic.h>
+    #include <dt-bindings/clock/nexell,s5p6818-clock.h>
+    mmc@c0069000 {
+        compatible = "nexell,s5p6818-dw-mshc";
+        reg = <0xc0069000 0x1000>;
+        interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&clocks NEXELL_CLK_SDMMC2>, <&clocks NEXELL_CLK_SDMMC2>;
+        clock-names = "biu", "ciu";
+        resets = <&nexell_reset 40>;
+        reset-names = "reset";
+        bus-width = <4>;
+        fifo-depth = <32>;
+        clock-frequency = <100000000>;
+        max-frequency = <50000000>;
+        nexell,drive-delay = <0>;
+        nexell,drive-shift = <2>;
+        nexell,sample-delay = <0x1c>;
+        nexell,sample-shift = <1>;
+        nexell,mmc-boost = <0>;
+        non-removable;
+    };

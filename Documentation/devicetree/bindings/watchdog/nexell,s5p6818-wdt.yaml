@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/watchdog/nexell,s5p6818-wdt.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 Watchdog Timer
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 watchdog timer is clocked from the 200 MHz bus PCLK rather
+  than a dedicated oscillator.  The driver derives the tick rate from the
+  nexell,wdt-frequency property.
+
+properties:
+  compatible:
+    const: nexell,s5p6818-wdt
+
+  reg:
+    maxItems: 1
+
+  clocks:
+    maxItems: 1
+
+  clock-names:
+    const: watchdog
+
+  resets:
+    items:
+      - description: watchdog POR reset
+      - description: watchdog reset
+
+  reset-names:
+    items:
+      - const: wdt-por
+      - const: wdt
+
+  nexell,wdt-frequency:
+    $ref: /schemas/types.yaml#/definitions/uint32
+    description: watchdog clock frequency in Hz
+
+required:
+  - compatible
+  - reg
+  - resets
+  - reset-names
+  - nexell,wdt-frequency
+
+additionalProperties: false
+
+examples:
+  - |
+    watchdog@c0019000 {
+        compatible = "nexell,s5p6818-wdt";
+        reg = <0xc0019000 0x1000>;
+        resets = <&nexell_reset 60>, <&nexell_reset 61>;
+        reset-names = "wdt-por", "wdt";
+        nexell,wdt-frequency = <200000000>;
+    };

@@ -221,6 +221,15 @@ config USB_EHCI_HCD_NPCM7XX
 	  Enables support for the on-chip EHCI controller on
 	  Nuvoton NPCM chips.
 
+config USB_EHCI_HCD_NEXELL
+	tristate "Nexell S5P6818 EHCI HCD support"
+	depends on USB_EHCI_HCD && ARCH_NEXELL && OF
+	select PHY_NEXELL_USB2
+	default y
+	help
+	  Enable the EHCI host controller and shared USB2 PHY provider for
+	  Nexell S5P6818 boards.
+
 config USB_EHCI_HCD_OMAP
 	tristate "EHCI support for OMAP3 and later chips"
 	depends on ARCH_OMAP || COMPILE_TEST
@@ -550,6 +559,15 @@ config USB_OHCI_EXYNOS
 	help
 	  Enable support for the Samsung S5Pv210 and Exynos SOC's on-chip OHCI
 	  controller.
+
+config USB_OHCI_HCD_NEXELL
+	tristate "Nexell S5P6818 OHCI HCD support"
+	depends on USB_OHCI_HCD && ARCH_NEXELL && OF
+	select PHY_NEXELL_USB2
+	default y
+	help
+	  Enable the OHCI companion host controller and shared USB2 PHY provider
+	  for Nexell S5P6818 boards.
 
 config USB_OHCI_HCD_PLATFORM
 	tristate "Generic OHCI driver for a platform device"

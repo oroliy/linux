@@ -1,0 +1,365 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/clock/nexell,s5p6818-clock.h>
+#include <dt-bindings/reset/nexell,s5p6818-reset.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	compatible = "nexell,s5p6818";
+
+	refclk: oscillator {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "xin";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0>;
+			cci-control-port = <&cci_control4>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <1>;
+			cci-control-port = <&cci_control4>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu2: cpu@2 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <2>;
+			cci-control-port = <&cci_control4>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu3: cpu@3 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <3>;
+			cci-control-port = <&cci_control4>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu4: cpu@40400 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x40400>;
+			cci-control-port = <&cci_control3>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu5: cpu@40401 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x40401>;
+			cci-control-port = <&cci_control3>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu6: cpu@40402 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x40402>;
+			cci-control-port = <&cci_control3>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+
+		cpu7: cpu@40403 {
+			compatible = "arm,cortex-a53";
+			device_type = "cpu";
+			reg = <0x40403>;
+			cci-control-port = <&cci_control3>;
+			enable-method = "nexell,s5p6818-smp";
+		};
+	};
+
+	gic: interrupt-controller@c0009000 {
+		compatible = "arm,gic-400";
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		reg = <0xc0009000 0x1000>, <0xc000a000 0x1000>;
+	};
+
+	cci: cci@e0090000 {
+		compatible = "arm,cci-400";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0xe0090000 0x6000>;
+		ranges = <0x0 0xe0090000 0x6000>;
+
+		cci_control0: slave-if@1000 {
+			compatible = "arm,cci-400-ctrl-if";
+			interface-type = "ace-lite";
+			reg = <0x1000 0x1000>;
+		};
+		cci_control1: slave-if@2000 {
+			compatible = "arm,cci-400-ctrl-if";
+			interface-type = "ace-lite";
+			reg = <0x2000 0x1000>;
+		};
+		cci_control2: slave-if@3000 {
+			compatible = "arm,cci-400-ctrl-if";
+			interface-type = "ace-lite";
+			reg = <0x3000 0x1000>;
+		};
+		cci_control3: slave-if@4000 {
+			compatible = "arm,cci-400-ctrl-if";
+			interface-type = "ace";
+			reg = <0x4000 0x1000>;
+		};
+		cci_control4: slave-if@5000 {
+			compatible = "arm,cci-400-ctrl-if";
+			interface-type = "ace";
+			reg = <0x5000 0x1000>;
+		};
+	};
+
+	timer: timer@c0017000 {
+		compatible = "nexell,s5p6818-timer";
+		reg = <0xc0017000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&clocks NEXELL_CLK_TIMER0>;
+		clock-names = "timer";
+		resets = <&nexell_reset RESET_ID_TIMER>;
+		reset-names = "timer";
+		/* PCLK is 200 MHz; the timer prescaler produces a 10 MHz tick. */
+		nexell,pclk-frequency = <200000000>;
+		clock-frequency = <10000000>;
+		status = "okay";
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&gic>;
+		ranges;
+
+		pinctrl: pinctrl@c001a000 {
+			compatible = "nexell,s5p6818-pinctrl";
+			reg = <0xc001a000 0x1000>,
+			      <0xc001b000 0x1000>,
+			      <0xc001c000 0x1000>,
+			      <0xc001d000 0x1000>,
+			      <0xc001e000 0x1000>,
+			      <0xc0010800 0x0200>;
+			#pinctrl-cells = <0>;
+
+			gpioa: gpioa {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpiob: gpiob {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpioc: gpioc {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpiod: gpiod {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			gpioe: gpioe {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+			alive: alive {
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			uart0_pins: uart0-pins {
+				nexell,pins = "gpiod-14", "gpiod-18";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			sdmmc2_clk_pins: sdmmc2-clk-pins {
+				nexell,pins = "gpioc-18";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <2>;
+			};
+
+			sdmmc2_cmd_pins: sdmmc2-cmd-pins {
+				nexell,pins = "gpioc-19";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <1>;
+			};
+
+			sdmmc2_data_pins: sdmmc2-data-pins {
+				nexell,pins = "gpioc-20", "gpioc-21", "gpioc-22", "gpioc-23";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <1>;
+			};
+		};
+
+		clocks: clock-controller@c0010000 {
+			compatible = "nexell,s5p6818-clk";
+			reg = <0xc0010000 0x400>,
+			      <0xc00a9000 0x1000>, <0xc00b9000 0x1000>,
+			      <0xc00bb000 0x1000>, <0xc00c5000 0x1000>,
+			      <0xc00cc000 0x1000>, <0xc00cd000 0x1000>,
+			      <0xc00c8000 0x1000>, <0xc006b000 0x1000>,
+			      <0xc00ca000 0x1000>, <0xc00ae000 0x1000>,
+			      <0xc00af000 0x1000>, <0xc00b0000 0x1000>;
+			reg-names = "clkpwr", "uart0", "timer0", "timer1",
+				    "sdmmc0", "sdmmc1", "sdmmc2", "gmac",
+				    "usbhost", "mipi", "i2c0", "i2c1", "i2c2";
+			clocks = <&refclk>;
+			clock-names = "xin";
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		nexell_reset: reset-controller@c0012000 {
+			compatible = "nexell,s5p6818-reset";
+			#reset-cells = <1>;
+			reg = <0xc0012000 0x0c>;
+			status = "okay";
+		};
+
+		usb_host_phy: usb-host-phy@c0011000 {
+			compatible = "nexell,s5p6818-usb-host-phy";
+			reg = <0xc0011000 0x100>;
+			clocks = <&clocks NEXELL_CLK_USBHOST>,
+				 <&clocks NEXELL_CLK_USBHOST_REF>;
+			clock-names = "usbhost", "usbhost-ref";
+			resets = <&nexell_reset RESET_ID_USB20HOST>;
+			reset-names = "host";
+			#phy-cells = <1>;
+			status = "okay";
+		};
+
+		ehci: usb@c0030000 {
+			compatible = "nexell,s5p6818-ehci";
+			reg = <0xc0030000 0x1000>;
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&usb_host_phy 0>;
+			phy-names = "usb2-phy";
+			companion = <&ohci>;
+			status = "disabled";
+		};
+
+		ohci: usb@c0020000 {
+			compatible = "nexell,s5p6818-ohci";
+			reg = <0xc0020000 0x1000>;
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
+			phys = <&usb_host_phy 1>;
+			phy-names = "usb2-phy";
+			status = "disabled";
+		};
+
+		display: display@c0101000 {
+			compatible = "nexell,s5p6818-display";
+			reg = <0xc0101000 0x100>,
+			      <0xc0102000 0x400>,
+			      <0xc0102800 0x400>,
+			      <0xc0105000 0x100>,
+			      <0xc00d0000 0x1000>,
+			      <0xc0011000 0x100>;
+			reg-names = "top", "mlc", "dpc", "clkgen", "mipi", "tieoff";
+			resets = <&nexell_reset RESET_ID_DISP_TOP>,
+				 <&nexell_reset RESET_ID_DISPLAY>,
+				 <&nexell_reset RESET_ID_MIPI>,
+				 <&nexell_reset RESET_ID_MIPI_DSI>,
+				 <&nexell_reset RESET_ID_MIPI_CSI>,
+				 <&nexell_reset RESET_ID_MIPI_PHY_S>,
+				 <&nexell_reset RESET_ID_MIPI_PHY_M>;
+			reset-names = "disp-top", "display", "mipi", "mipi-dsi",
+				      "mipi-csi", "mipi-phy-s", "mipi-phy-m";
+			status = "disabled";
+		};
+
+		gmac: ethernet@c0060000 {
+			compatible = "nexell,s5p6818-dwmac";
+			reg = <0xc0060000 0x2000>;
+			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "macirq";
+			clocks = <&clocks NEXELL_CLK_GMAC>,
+				 <&clocks NEXELL_CLK_GMAC_TX>;
+			clock-names = "stmmaceth", "pclk";
+			nexell,clock-controller = <&clocks>;
+			resets = <&nexell_reset RESET_ID_DWC_GMAC>;
+			reset-names = "stmmaceth";
+			snps,clk-csr = <4>;
+			snps,pbl = <16>;
+			snps,no-pbl-x8;
+			snps,multicast-filter-bins = <256>;
+			status = "disabled";
+		};
+
+		mmc2: mmc@c0069000 {
+			compatible = "nexell,s5p6818-dw-mshc";
+			reg = <0xc0069000 0x1000>;
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clocks NEXELL_CLK_SDMMC2>,
+				 <&clocks NEXELL_CLK_SDMMC2>;
+			clock-names = "biu", "ciu";
+			resets = <&nexell_reset RESET_ID_SDMMC2>;
+			reset-names = "reset";
+			pinctrl-names = "default";
+			pinctrl-0 = <&sdmmc2_clk_pins &sdmmc2_cmd_pins
+				     &sdmmc2_data_pins>;
+			bus-width = <4>;
+			fifo-depth = <32>;
+			clock-frequency = <100000000>;
+			max-frequency = <50000000>;
+			nexell,drive-delay = <0>;
+			nexell,drive-shift = <2>;
+			nexell,sample-delay = <0x1c>;
+			nexell,sample-shift = <1>;
+			nexell,mmc-boost = <0>;
+			non-removable;
+			status = "disabled";
+		};
+
+		watchdog: watchdog@c0019000 {
+			compatible = "nexell,s5p6818-wdt";
+			reg = <0xc0019000 0x1000>;
+			resets = <&nexell_reset RESET_ID_WDT_POR>,
+				 <&nexell_reset RESET_ID_WDT>;
+			reset-names = "wdt-por", "wdt";
+			/*
+			 * The S5P6818 watchdog is clocked from the 200 MHz bus
+			 * PCLK, not from a dedicated 4 MHz oscillator.  Verified
+			 * empirically: timeouts programmed for 5 s, 20 s and
+			 * 60 s (under a 4 MHz assumption) expired after 0.1 s,
+			 * 2.5 s and 10 s — exactly a factor of 50.
+			 */
+			nexell,wdt-frequency = <200000000>;
+			status = "okay";
+		};
+
+		uart0: serial@c00a1000 {
+			compatible = "nexell,s5p6818-uart";
+			reg = <0xc00a1000 0x1000>;
+			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clocks NEXELL_CLK_UART0>,
+				 <&clocks NEXELL_CLK_UART0>;
+			clock-names = "uart", "clk_uart_baud0";
+			resets = <&nexell_reset RESET_ID_UART0>;
+			reset-names = "uart-reset";
+			status = "disabled";
+		};
+	};
+};

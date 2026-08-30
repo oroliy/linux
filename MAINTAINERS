@@ -1983,6 +1983,38 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/soc/soc.git
 F:	arch/arm/mach-*/
 F:	arch/arm/plat-*/
 
+ARM/NEXELL S5P6818 SUPPORT
+M:	liy <liygfg@gmail.com>
+S:	Maintained
+F:	Documentation/devicetree/bindings/arm/nexell.yaml
+F:	Documentation/devicetree/bindings/clock/nexell,s5p6818-clock.yaml
+F:	Documentation/devicetree/bindings/display/nexell,s5p6818-display.yaml
+F:	Documentation/devicetree/bindings/mmc/nexell,s5p6818-dw-mshc.yaml
+F:	Documentation/devicetree/bindings/net/nexell,s5p6818-dwmac.yaml
+F:	Documentation/devicetree/bindings/phy/nexell,s5p6818-usb2-phy.yaml
+F:	Documentation/devicetree/bindings/pinctrl/nexell,s5p6818-pinctrl.yaml
+F:	Documentation/devicetree/bindings/reset/nexell,s5p6818-reset.yaml
+F:	Documentation/devicetree/bindings/timer/nexell,s5p6818-timer.yaml
+F:	Documentation/devicetree/bindings/usb/nexell,s5p6818-usb.yaml
+F:	Documentation/devicetree/bindings/watchdog/nexell,s5p6818-wdt.yaml
+F:	arch/arm/boot/dts/nexell/
+F:	arch/arm/configs/x6818_defconfig
+F:	arch/arm/mach-nexell/
+F:	drivers/clk/nexell/
+F:	drivers/clocksource/timer-nexell.c
+F:	drivers/mmc/host/dw_mmc-nexell.c
+F:	drivers/net/ethernet/stmicro/stmmac/dwmac-nexell.c
+F:	drivers/phy/nexell/
+F:	drivers/pinctrl/nexell/
+F:	drivers/reset/reset-nexell.c
+F:	drivers/usb/host/ehci-nexell.c
+F:	drivers/usb/host/ohci-nexell.c
+F:	drivers/video/nexell/
+F:	drivers/watchdog/nexell_wdt.c
+F:	include/dt-bindings/clock/nexell,s5p6818-clock.h
+F:	include/dt-bindings/reset/nexell,s5p6818-reset.h
+F:	scripts/x6818-mkinitramfs.sh
+
 ARM/ACTIONS SEMI ARCHITECTURE
 M:	Andreas Färber <afaerber@suse.de>
 M:	Manivannan Sadhasivam <manivannan.sadhasivam@linaro.org>

@@ -24,6 +24,7 @@ obj-y					+= allwinner/	\
 					   mediatek/	\
 					   microchip/	\
 					   motorola/	\
+					   nexell/	\
 					   mscc/	\
 					   nuvoton/	\
 					   qualcomm/	\

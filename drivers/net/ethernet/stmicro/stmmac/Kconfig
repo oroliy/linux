@@ -102,6 +102,14 @@ config DWMAC_LPC18XX
 	help
 	  Support for NXP LPC18xx/43xx DWMAC Ethernet.
 
+config DWMAC_NEXELL
+	tristate "Nexell S5P6818 DWMAC support"
+	default ARCH_NEXELL
+	depends on OF && HAS_IOMEM && COMMON_CLK && (ARCH_NEXELL || COMPILE_TEST)
+	help
+	  Support for the Synopsys GMAC controller integrated in the Nexell
+	  S5P6818 SoC, including its clock and descriptor configuration.
+
 config DWMAC_MEDIATEK
 	tristate "MediaTek MT27xx GMAC support"
 	depends on OF && (ARCH_MEDIATEK || COMPILE_TEST)

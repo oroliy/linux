@@ -8,10 +8,10 @@
 /* MCS spin-locking. */
 #define arch_mcs_spin_lock_contended(lock)				\
 do {									\
-	/* Ensure prior stores are observed before we enter wfe. */	\
+	/* Ensure prior stores are observed before the wait loop. */	\
 	smp_mb();							\
 	while (!(smp_load_acquire(lock)))				\
-		wfe();							\
+		arch_spin_lock_wait();					\
 } while (0)								\
 
 #define arch_mcs_spin_unlock_contended(lock)				\

@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/display/nexell,s5p6818-display.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 Display Scanout Handoff
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  The S5P6818 display pipeline (DisplayTop, MLC, DPC, CLKGEN2, MIPI DSI)
+  is reprogrammed from the U-Boot scanout state for a native Linux scanout
+  configuration.
+
+properties:
+  compatible:
+    const: nexell,s5p6818-display
+
+  reg:
+    maxItems: 6
+
+  reg-names:
+    items:
+      - const: top
+      - const: mlc
+      - const: dpc
+      - const: clkgen
+      - const: mipi
+      - const: tieoff
+
+  resets:
+    minItems: 7
+    maxItems: 7
+
+  reset-names:
+    items:
+      - const: disp-top
+      - const: display
+      - const: mipi
+      - const: mipi-dsi
+      - const: mipi-csi
+      - const: mipi-phy-s
+      - const: mipi-phy-m
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - resets
+  - reset-names
+
+additionalProperties: false
+
+examples:
+  - |
+    display@c0101000 {
+        compatible = "nexell,s5p6818-display";
+        reg = <0xc0101000 0x100>,
+              <0xc0102000 0x400>,
+              <0xc0102800 0x400>,
+              <0xc0105000 0x100>,
+              <0xc00d0000 0x1000>,
+              <0xc0011000 0x100>;
+        reg-names = "top", "mlc", "dpc", "clkgen", "mipi", "tieoff";
+        resets = <&nexell_reset 70>, <&nexell_reset 71>, <&nexell_reset 72>,
+                 <&nexell_reset 73>, <&nexell_reset 74>, <&nexell_reset 75>,
+                 <&nexell_reset 76>;
+        reset-names = "disp-top", "display", "mipi", "mipi-dsi", "mipi-csi",
+                      "mipi-phy-s", "mipi-phy-m";
+    };

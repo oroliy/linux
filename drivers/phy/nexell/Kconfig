@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config PHY_NEXELL_USB2
+	tristate "Nexell S5P6818 USB 2.0 PHY"
+	depends on OF && ARCH_NEXELL
+	select GENERIC_PHY
+	select RESET_CONTROLLER
+	help
+	  Enable support for the shared USB 2.0 host PHY found in the Nexell
+	  S5P6818 SoC. The PHY is shared by the EHCI and OHCI host controllers
+	  and manages their common clocks, reset, and TIEOFF configuration.

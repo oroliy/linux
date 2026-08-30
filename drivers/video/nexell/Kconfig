@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config VIDEO_NEXELL_S5P6818
+	bool "Nexell S5P6818 native display scanout"
+	depends on ARCH_NEXELL && OF && HAS_IOMEM && RESET_CONTROLLER
+	default ARCH_NEXELL
+	help
+	  Validate and reapply the S5P6818 display-top, MLC, DPC, and display
+	  clock-generator scanout state handed over by the bootloader.  The
+	  MIPI DSI host and panel sequence remain a later ownership stage.

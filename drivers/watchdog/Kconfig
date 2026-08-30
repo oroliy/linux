@@ -564,6 +564,16 @@ config S3C2410_WATCHDOG
 	  The driver can be built as a module by choosing M, and will
 	  be called s3c2410_wdt.
 
+config NEXELL_WDT
+	tristate "Nexell S5P6818 Watchdog"
+	depends on ARCH_NEXELL || COMPILE_TEST
+	select WATCHDOG_CORE
+	select RESET_CONTROLLER
+	help
+	  Enable the hardware watchdog timer in the Nexell S5P6818 SoC.
+	  The watchdog asserts the SoC reset when /dev/watchdog is not
+	  serviced before the configured timeout.
+
 config SA1100_WATCHDOG
 	tristate "SA1100/PXA2xx watchdog"
 	depends on ARCH_SA1100 || ARCH_PXA || COMPILE_TEST

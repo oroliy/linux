@@ -784,6 +784,16 @@ config MMC_DW_PLTFM
 
 	  If unsure, say Y.
 
+config MMC_DW_NEXELL
+	tristate "Nexell specific extensions for Synopsys DW Memory Card Interface"
+	depends on MMC_DW && (ARCH_NEXELL || COMPILE_TEST)
+	select MMC_DW_PLTFM
+	help
+	  This selects the Nexell S5P6818 extensions for the Synopsys
+	  DesignWare Mobile Storage IP block.
+
+	  If you have a Nexell S5P6818 board with SD/MMC or eMMC, say Y here.
+
 config MMC_DW_BLUEFIELD
 	tristate "BlueField specific extensions for Synopsys DW Memory Card Interface"
 	depends on MMC_DW
