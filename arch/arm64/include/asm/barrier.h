@@ -216,6 +216,43 @@ do {									\
 	(typeof(*ptr))VAL;						\
 })
 
+#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
+extern bool nexell_s5p6818_poll_lock_wait;
+
+#define arch_lock_cond_load_relaxed(ptr, cond_expr)			\
+({								\
+	__auto_type __PTR = (ptr);					\
+	__unqual_scalar_typeof(*__PTR) VAL;				\
+	for (;;) {							\
+		VAL = READ_ONCE(*__PTR);				\
+		if (cond_expr)					\
+			break;						\
+		if (unlikely(READ_ONCE(nexell_s5p6818_poll_lock_wait)))\
+			cpu_relax();					\
+		else							\
+			__cmpwait_relaxed(__PTR, VAL);			\
+	}								\
+	(typeof(*__PTR))VAL;						\
+})
+
+#define arch_lock_cond_load_acquire(ptr, cond_expr)			\
+({								\
+	__auto_type __PTR = (ptr);					\
+	__unqual_scalar_typeof(*__PTR) VAL;				\
+	for (;;) {							\
+		/* ACQUIRE pairs with release-store lock handoff. */ \
+		VAL = smp_load_acquire(__PTR);				\
+		if (cond_expr)					\
+			break;						\
+		if (unlikely(READ_ONCE(nexell_s5p6818_poll_lock_wait)))\
+			cpu_relax();					\
+		else							\
+			__cmpwait_relaxed(__PTR, VAL);			\
+	}								\
+	(typeof(*__PTR))VAL;						\
+})
+#endif
+
 #include <asm-generic/barrier.h>
 
 #endif	/* __ASSEMBLY__ */

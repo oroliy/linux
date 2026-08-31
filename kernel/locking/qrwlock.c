@@ -14,6 +14,8 @@
 #include <linux/spinlock.h>
 #include <trace/events/lock.h>
 
+#include "lock_wait.h"
+
 /**
  * queued_read_lock_slowpath - acquire read lock of a queued rwlock
  * @lock: Pointer to queued rwlock structure
@@ -30,7 +32,8 @@ void __lockfunc queued_read_lock_slowpath(struct qrwlock *lock)
 		 * so spin with ACQUIRE semantics until the lock is available
 		 * without waiting in the queue.
 		 */
-		atomic_cond_read_acquire(&lock->cnts, !(VAL & _QW_LOCKED));
+		arch_lock_cond_load_acquire(&lock->cnts.counter,
+					    !(VAL & _QW_LOCKED));
 		return;
 	}
 	atomic_sub(_QR_BIAS, &lock->cnts);
@@ -48,7 +51,7 @@ void __lockfunc queued_read_lock_slowpath(struct qrwlock *lock)
 	 * that accesses can't leak upwards out of our subsequent critical
 	 * section in the case that the lock is currently held for write.
 	 */
-	atomic_cond_read_acquire(&lock->cnts, !(VAL & _QW_LOCKED));
+	arch_lock_cond_load_acquire(&lock->cnts.counter, !(VAL & _QW_LOCKED));
 
 	/*
 	 * Signal the next one in queue to become queue head
@@ -82,7 +85,8 @@ void __lockfunc queued_write_lock_slowpath(struct qrwlock *lock)
 
 	/* When no more readers or writers, set the locked flag */
 	do {
-		cnts = atomic_cond_read_relaxed(&lock->cnts, VAL == _QW_WAITING);
+		cnts = arch_lock_cond_load_relaxed(&lock->cnts.counter,
+						   VAL == _QW_WAITING);
 	} while (!atomic_try_cmpxchg_acquire(&lock->cnts, &cnts, _QW_LOCKED));
 unlock:
 	arch_spin_unlock(&lock->wait_lock);

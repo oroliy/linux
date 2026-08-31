@@ -67,6 +67,7 @@
  */
 
 #include "mcs_spinlock.h"
+#include "lock_wait.h"
 #define MAX_NODES	4
 
 /*
@@ -332,8 +333,8 @@ void __lockfunc queued_spin_lock_slowpath(struct qspinlock *lock, u32 val)
 	 */
 	if (val == _Q_PENDING_VAL) {
 		int cnt = _Q_PENDING_LOOPS;
-		val = atomic_cond_read_relaxed(&lock->val,
-					       (VAL != _Q_PENDING_VAL) || !cnt--);
+		val = arch_lock_cond_load_relaxed(&lock->val.counter,
+						  (VAL != _Q_PENDING_VAL) || !cnt--);
 	}
 
 	/*
@@ -377,7 +378,7 @@ void __lockfunc queued_spin_lock_slowpath(struct qspinlock *lock, u32 val)
 	 * barriers.
 	 */
 	if (val & _Q_LOCKED_MASK)
-		smp_cond_load_acquire(&lock->locked, !VAL);
+		arch_lock_cond_load_acquire(&lock->locked, !VAL);
 
 	/*
 	 * take ownership and clear the pending bit.
@@ -508,7 +509,8 @@ pv_queue:
 	if ((val = pv_wait_head_or_lock(lock, node)))
 		goto locked;
 
-	val = atomic_cond_read_acquire(&lock->val, !(VAL & _Q_LOCKED_PENDING_MASK));
+	val = arch_lock_cond_load_acquire(&lock->val.counter,
+					  !(VAL & _Q_LOCKED_PENDING_MASK));
 
 locked:
 	/*
@@ -548,7 +550,7 @@ locked:
 	 * contended path; wait for next if not observed yet, release.
 	 */
 	if (!next)
-		next = smp_cond_load_relaxed(&node->next, (VAL));
+		next = arch_lock_cond_load_relaxed(&node->next, (VAL));
 
 	arch_mcs_spin_unlock_contended(&next->locked);
 	pv_kick_node(lock, next);

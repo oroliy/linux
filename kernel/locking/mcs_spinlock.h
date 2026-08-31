@@ -15,6 +15,8 @@
 
 #include <asm/mcs_spinlock.h>
 
+#include "lock_wait.h"
+
 struct mcs_spinlock {
 	struct mcs_spinlock *next;
 	int locked; /* 1 if lock acquired */
@@ -31,7 +33,7 @@ struct mcs_spinlock {
  */
 #define arch_mcs_spin_lock_contended(l)					\
 do {									\
-	smp_cond_load_acquire(l, VAL);					\
+	arch_lock_cond_load_acquire(l, VAL);				\
 } while (0)
 #endif
 

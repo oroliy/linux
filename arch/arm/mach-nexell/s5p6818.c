@@ -18,10 +18,6 @@
 
 static void __iomem *s5p6818_clkpwr;
 
-#ifdef CONFIG_NEXELL_S5P6818_NO_CROSS_CLUSTER_SEV
-bool nexell_s5p6818_poll_lock_wait;
-#endif
-
 static void s5p6818_restart(enum reboot_mode mode, const char *cmd)
 {
 	u32 value;
