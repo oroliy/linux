@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "s5p6818.dtsi"
+
+/ {
+	model = "Nexell S5P6818 x6818 board (AArch64)";
+	compatible = "nexell,x6818", "nexell,s5p6818";
+
+	aliases {
+		ethernet0 = &gmac;
+		mshc0 = &mmc2;
+		serial0 = &uart0;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+
+		/* U-Boot initializes the MIPI pipeline and scans out from this FB. */
+		framebuffer0: framebuffer {
+			compatible = "simple-framebuffer";
+			memory-region = <&x6818_framebuffer>;
+			width = <1024>;
+			height = <600>;
+			stride = <4096>;
+			format = "x8r8g8b8";
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		x6818_framebuffer: framebuffer@46000000 {
+			reg = <0x0 0x46000000 0x0 0x01000000>;
+			no-map;
+		};
+
+		secure_firmware: firmware@7e000000 {
+			reg = <0x0 0x7e000000 0x0 0x02000000>;
+			no-map;
+		};
+	};
+
+	memory@40000000 {
+		device_type = "memory";
+		reg = <0x0 0x40000000 0x0 0x3e000000>;
+	};
+};
+
+&display {
+	status = "disabled";
+};
+
+&ehci {
+	status = "okay";
+};
+
+&gmac {
+	max-speed = <1000>;
+	phy-handle = <&gmac_phy>;
+	phy-mode = "rgmii-id";
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac_rgmii_pins &gmac_phy_reset>;
+	status = "okay";
+
+	mdio {
+		compatible = "snps,dwmac-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gmac_phy: ethernet-phy@4 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <4>;
+			reset-assert-us = <100>;
+			reset-gpios = <&gpioe 22 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&mmc2 {
+	status = "okay";
+};
+
+&ohci {
+	status = "okay";
+};
+
+&pinctrl {
+	gmac_rgmii_pins: gmac-rgmii-pins {
+		nexell,pins = "gpioe-7", "gpioe-8", "gpioe-9", "gpioe-10",
+			       "gpioe-11", "gpioe-14", "gpioe-15", "gpioe-16",
+			       "gpioe-17", "gpioe-18", "gpioe-19", "gpioe-20",
+			       "gpioe-21", "gpioe-24";
+		nexell,pin-function = <1>;
+		nexell,pin-pull = <2>;
+		nexell,pin-strength = <3>;
+	};
+
+	gmac_phy_reset: gmac-phy-reset-pins {
+		nexell,pins = "gpioe-22";
+		nexell,pin-function = <0>;
+		nexell,pin-pull = <2>;
+		nexell,pin-strength = <3>;
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};

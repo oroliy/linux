@@ -1,6 +1,22 @@
 # SPDX-License-Identifier: GPL-2.0-only
 menu "Platform selection"
 
+config ARCH_NEXELL_S5P6818
+	bool "Nexell S5P6818 platforms"
+	select ARM_CCI400_COMMON
+	select ARM_GIC
+	select ARM_PSCI
+	select COMMON_CLK
+	select HAVE_ARM_ARCH_TIMER
+	select PINCTRL
+	select RESET_CONTROLLER
+	select SOC_NEXELL_S5P6818
+	help
+	  Enable support for AArch64 systems based on the Nexell S5P6818
+	  Cortex-A53 SoC. CPU power management is provided by TF-A through
+	  PSCI; the AArch32 Nexell holding-pen implementation is not used.
+	  This includes the x6818 product board.
+
 config ARCH_ACTIONS
 	bool "Actions Semi Platforms"
 	select OWL_TIMER

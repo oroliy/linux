@@ -2000,6 +2000,8 @@ F:	Documentation/devicetree/bindings/watchdog/nexell,s5p6818-wdt.yaml
 F:	arch/arm/boot/dts/nexell/
 F:	arch/arm/configs/x6818_defconfig
 F:	arch/arm/mach-nexell/
+F:	arch/arm64/boot/dts/nexell/
+F:	arch/arm64/configs/x6818_arm64_defconfig
 F:	drivers/clk/nexell/
 F:	drivers/clocksource/timer-nexell.c
 F:	drivers/mmc/host/dw_mmc-nexell.c
@@ -2007,6 +2009,7 @@ F:	drivers/net/ethernet/stmicro/stmmac/dwmac-nexell.c
 F:	drivers/phy/nexell/
 F:	drivers/pinctrl/nexell/
 F:	drivers/reset/reset-nexell.c
+F:	drivers/soc/nexell/
 F:	drivers/usb/host/ehci-nexell.c
 F:	drivers/usb/host/ohci-nexell.c
 F:	drivers/video/nexell/
