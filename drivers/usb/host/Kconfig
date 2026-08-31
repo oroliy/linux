@@ -223,7 +223,7 @@ config USB_EHCI_HCD_NPCM7XX
 
 config USB_EHCI_HCD_NEXELL
 	tristate "Nexell S5P6818 EHCI HCD support"
-	depends on USB_EHCI_HCD && ARCH_NEXELL && OF
+	depends on USB_EHCI_HCD && SOC_NEXELL_S5P6818 && OF
 	select PHY_NEXELL_USB2
 	default y
 	help
@@ -562,7 +562,7 @@ config USB_OHCI_EXYNOS
 
 config USB_OHCI_HCD_NEXELL
 	tristate "Nexell S5P6818 OHCI HCD support"
-	depends on USB_OHCI_HCD && ARCH_NEXELL && OF
+	depends on USB_OHCI_HCD && SOC_NEXELL_S5P6818 && OF
 	select PHY_NEXELL_USB2
 	default y
 	help

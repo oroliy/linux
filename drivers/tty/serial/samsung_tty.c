@@ -2450,7 +2450,7 @@ static const struct s3c24xx_serial_drv_data s5pv210_serial_drv_data = {
 #define S5PV210_SERIAL_DRV_DATA	NULL
 #endif
 
-#ifdef CONFIG_ARCH_NEXELL
+#ifdef CONFIG_SOC_NEXELL_S5P6818
 static const struct s3c24xx_serial_drv_data nexell_serial_drv_data = {
 	.info = {
 		.name		= "Nexell S5P6818 UART",

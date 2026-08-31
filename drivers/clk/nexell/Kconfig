@@ -2,8 +2,8 @@
 
 config COMMON_CLK_NEXELL
 	bool "Nexell S5P6818 clock support"
-	depends on (ARCH_NEXELL || COMPILE_TEST) && OF
-	default ARCH_NEXELL
+	depends on (SOC_NEXELL_S5P6818 || COMPILE_TEST) && OF
+	default SOC_NEXELL_S5P6818
 	help
 	  Enable the Common Clock Framework provider for the Nexell S5P6818.
 	  The driver reads the PLL state left by the boot ROM/U-Boot and exposes

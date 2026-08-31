@@ -566,7 +566,7 @@ config S3C2410_WATCHDOG
 
 config NEXELL_WDT
 	tristate "Nexell S5P6818 Watchdog"
-	depends on ARCH_NEXELL || COMPILE_TEST
+	depends on SOC_NEXELL_S5P6818 || COMPILE_TEST
 	select WATCHDOG_CORE
 	select RESET_CONTROLLER
 	help

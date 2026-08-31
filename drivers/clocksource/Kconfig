@@ -34,7 +34,7 @@ config CLKSRC_MMIO
 
 config NEXELL_TIMER
 	bool "Nexell S5P6818 timer driver"
-	depends on ARCH_NEXELL
+	depends on SOC_NEXELL_S5P6818
 	default y
 	select CLKSRC_MMIO
 	select TIMER_OF

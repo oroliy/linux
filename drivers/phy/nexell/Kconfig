@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0-only
 config PHY_NEXELL_USB2
 	tristate "Nexell S5P6818 USB 2.0 PHY"
-	depends on OF && ARCH_NEXELL
+	depends on OF && SOC_NEXELL_S5P6818
 	select GENERIC_PHY
 	select RESET_CONTROLLER
 	help

@@ -786,7 +786,7 @@ config MMC_DW_PLTFM
 
 config MMC_DW_NEXELL
 	tristate "Nexell specific extensions for Synopsys DW Memory Card Interface"
-	depends on MMC_DW && (ARCH_NEXELL || COMPILE_TEST)
+	depends on MMC_DW && (SOC_NEXELL_S5P6818 || COMPILE_TEST)
 	select MMC_DW_PLTFM
 	help
 	  This selects the Nexell S5P6818 extensions for the Synopsys

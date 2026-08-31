@@ -238,7 +238,7 @@ config SERIAL_CLPS711X_CONSOLE
 
 config SERIAL_SAMSUNG
 	tristate "Samsung SoC serial support"
-	depends on PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || ARCH_APPLE || ARCH_ARTPEC || ARCH_NEXELL || COMPILE_TEST
+	depends on PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || ARCH_APPLE || ARCH_ARTPEC || SOC_NEXELL_S5P6818 || COMPILE_TEST
 	select SERIAL_CORE
 	help
 	  Support for the on-chip UARTs on the Samsung
@@ -251,7 +251,7 @@ config SERIAL_SAMSUNG
 config SERIAL_SAMSUNG_UARTS
 	int
 	depends on SERIAL_SAMSUNG
-	default 6 if ARCH_NEXELL
+	default 6 if SOC_NEXELL_S5P6818
 	default 4
 	help
 	  Select the number of available UART ports for the Samsung S3C

@@ -104,8 +104,8 @@ config DWMAC_LPC18XX
 
 config DWMAC_NEXELL
 	tristate "Nexell S5P6818 DWMAC support"
-	default ARCH_NEXELL
-	depends on OF && HAS_IOMEM && COMMON_CLK && (ARCH_NEXELL || COMPILE_TEST)
+	default SOC_NEXELL_S5P6818
+	depends on OF && HAS_IOMEM && COMMON_CLK && (SOC_NEXELL_S5P6818 || COMPILE_TEST)
 	help
 	  Support for the Synopsys GMAC controller integrated in the Nexell
 	  S5P6818 SoC, including its clock and descriptor configuration.
