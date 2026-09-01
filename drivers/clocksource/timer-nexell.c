@@ -21,6 +21,11 @@
 #include <linux/sched_clock.h>
 #include <linux/spinlock.h>
 #include <linux/reset.h>
+#include <linux/nexell_timer.h>
+
+#ifdef CONFIG_ARM
+#include <asm/delay.h>
+#endif
 
 #define NEXELL_TIMER_CFG0		0x00
 #define NEXELL_TIMER_CFG1		0x04
@@ -58,7 +63,10 @@ struct nexell_timer {
 
 static struct nexell_timer nexell_timer_data;
 static struct nexell_timer *nexell_timer = &nexell_timer_data;
+#ifdef CONFIG_ARM
 static struct delay_timer nexell_delay_timer;
+#endif
+static bool nexell_timer_ready;
 
 static inline void __iomem *nexell_timer_channel(struct nexell_timer *timer,
 							unsigned int channel,
@@ -172,21 +180,23 @@ static void nexell_timer_clear_pending(struct nexell_timer *timer,
 	writel(value, timer->base + NEXELL_TIMER_STAT);
 }
 
-static u32 nexell_timer_read_counter(struct nexell_timer *timer)
+static u32 nexell_timer_read_counter_hw(struct nexell_timer *timer)
 {
 	return ~readl_relaxed(nexell_timer_channel(timer,
 							 NEXELL_TIMER_SOURCE_CHANNEL,
 							 NEXELL_TIMER_CNTO));
 }
 
+#ifdef CONFIG_ARM
 static unsigned long nexell_timer_read_current_timer(void)
 {
-	return nexell_timer_read_counter(nexell_timer);
+	return nexell_timer_read_counter_hw(nexell_timer);
 }
+#endif
 
 static u64 notrace nexell_timer_read_sched_clock(void)
 {
-	return nexell_timer_read_counter(nexell_timer);
+	return nexell_timer_read_counter_hw(nexell_timer);
 }
 
 static u64 nexell_timer_read_clocksource(struct clocksource *clocksource)
@@ -194,8 +204,26 @@ static u64 nexell_timer_read_clocksource(struct clocksource *clocksource)
 	struct nexell_timer *timer = container_of(clocksource,
 						  struct nexell_timer, clocksource);
 
-	return nexell_timer_read_counter(timer);
+	return nexell_timer_read_counter_hw(timer);
 }
+
+bool nexell_timer_is_ready(void)
+{
+	return READ_ONCE(nexell_timer_ready);
+}
+EXPORT_SYMBOL_GPL(nexell_timer_is_ready);
+
+u64 nexell_timer_read_counter(void)
+{
+	return nexell_timer_read_counter_hw(nexell_timer);
+}
+EXPORT_SYMBOL_GPL(nexell_timer_read_counter);
+
+unsigned long nexell_timer_get_rate(void)
+{
+	return READ_ONCE(nexell_timer->rate);
+}
+EXPORT_SYMBOL_GPL(nexell_timer_get_rate);
 
 static int nexell_timer_set_state_shutdown(struct clock_event_device *event)
 {
@@ -319,9 +347,11 @@ static int __init nexell_timer_init(struct device_node *node)
 	nexell_timer_load_raw(timer, NEXELL_TIMER_SOURCE_CHANNEL, U32_MAX);
 	nexell_timer_start(timer, NEXELL_TIMER_SOURCE_CHANNEL, false, true);
 
+#ifdef CONFIG_ARM
 	nexell_delay_timer.read_current_timer = nexell_timer_read_current_timer;
 	nexell_delay_timer.freq = timer->rate;
 	register_current_timer_delay(&nexell_delay_timer);
+#endif
 
 	timer->clocksource.name = "nexell-timer";
 	timer->clocksource.rating = 300;
@@ -334,6 +364,7 @@ static int __init nexell_timer_init(struct device_node *node)
 		pr_err("nexell-timer: unable to register clocksource: %d\n", ret);
 		return ret;
 	}
+	WRITE_ONCE(nexell_timer_ready, true);
 
 	sched_clock_register(nexell_timer_read_sched_clock, 32, timer->rate);
 

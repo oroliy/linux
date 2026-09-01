@@ -28,6 +28,7 @@
 #include <linux/acpi.h>
 
 #include <clocksource/arm_arch_timer.h>
+#include <linux/nexell_timer.h>
 
 #include <asm/thread_info.h>
 #include <asm/paravirt.h>
@@ -61,12 +62,18 @@ void __init time_init(void)
 
 	tick_setup_hrtimer_broadcast();
 
-	arch_timer_rate = arch_timer_get_rate();
-	if (!arch_timer_rate)
-		panic("Unable to initialise architected timer.\n");
+	if (IS_ENABLED(CONFIG_NEXELL_TIMER) && nexell_timer_is_ready()) {
+		pr_info("Using Nexell timer fallback at %lu Hz\n",
+			nexell_timer_get_rate());
+		lpj_fine = nexell_timer_get_rate() / HZ;
+	} else {
+		arch_timer_rate = arch_timer_get_rate();
+		if (!arch_timer_rate)
+			panic("Unable to initialise architected timer.\n");
 
-	/* Calibrate the delay loop directly */
-	lpj_fine = arch_timer_rate / HZ;
+		/* Calibrate the delay loop directly */
+		lpj_fine = arch_timer_rate / HZ;
+	}
 
 	pv_time_init();
 }

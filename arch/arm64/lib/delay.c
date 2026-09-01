@@ -14,6 +14,7 @@
 #include <linux/timex.h>
 
 #include <clocksource/arm_arch_timer.h>
+#include <linux/nexell_timer.h>
 
 #define USECS_TO_CYCLES(time_usecs)			\
 	xloops_to_cycles((time_usecs) * 0x10C7UL)
@@ -32,6 +33,27 @@ static inline unsigned long xloops_to_cycles(unsigned long xloops)
  * Note that userspace cannot change the offset behind our back either,
  * as the vcpu mutex is held as long as KVM_RUN is in progress.
  */
+#if IS_ENABLED(CONFIG_NEXELL_TIMER)
+static cycles_t notrace __delay_cycles(void)
+{
+	return nexell_timer_read_counter();
+}
+
+void __delay(unsigned long cycles)
+{
+	cycles_t start;
+
+	if (!nexell_timer_is_ready()) {
+		while (cycles--)
+			cpu_relax();
+		return;
+	}
+
+	start = __delay_cycles();
+	while ((__delay_cycles() - start) < cycles)
+		cpu_relax();
+}
+#else
 static cycles_t notrace __delay_cycles(void)
 {
 	guard(preempt_notrace)();
@@ -63,6 +85,7 @@ void __delay(unsigned long cycles)
 	while ((__delay_cycles() - start) < cycles)
 		cpu_relax();
 }
+#endif
 EXPORT_SYMBOL(__delay);
 
 inline void __const_udelay(unsigned long xloops)

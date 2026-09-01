@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+/dts-v1/;
+
+#include "s5p6818-x6818.dts"
+
+/*
+ * The S5P6818 board counter is stopped with the currently supported
+ * firmware, even when both documented cluster counter gates are set.  Keep
+ * this fallback DTB separate from the product DTB: the ARM architectural
+ * timer remains the required product interface, while this target exercises
+ * the legacy Nexell timer without claiming that the architectural counter
+ * works.
+ */
+&arch_timer {
+	status = "disabled";
+};
+
+&timer {
+	status = "okay";
+};
