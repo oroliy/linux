@@ -100,6 +100,15 @@ static void nexell_ohci_remove(struct platform_device *pdev)
 	usb_put_hcd(hcd);
 }
 
+static void nexell_ohci_shutdown(struct platform_device *pdev)
+{
+	/*
+	 * S5P6818 OHCI registers become inaccessible during system reboot
+	 * shutdown. Skip generic HCD MMIO access and let the platform reset
+	 * reinitialize the controller on the next boot.
+	 */
+}
+
 static const struct of_device_id nexell_ohci_ids[] = {
 	{ .compatible = "nexell,s5p6818-ohci" },
 	{ }
@@ -109,7 +118,7 @@ MODULE_DEVICE_TABLE(of, nexell_ohci_ids);
 static struct platform_driver nexell_ohci_driver = {
 	.probe = nexell_ohci_probe,
 	.remove_new = nexell_ohci_remove,
-	.shutdown = usb_hcd_platform_shutdown,
+	.shutdown = nexell_ohci_shutdown,
 	.driver = {
 		.name = "nexell-ohci",
 		.of_match_table = nexell_ohci_ids,
