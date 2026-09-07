@@ -11,7 +11,12 @@
  * Use the current timer as a cycle counter since this is what we use for
  * the delay loop.
  */
+#ifdef CONFIG_NEXELL_TIMER
+#include <linux/nexell_timer.h>
+#define get_cycles()	(nexell_timer_is_ready() ? nexell_timer_read_counter() : arch_timer_read_counter())
+#else
 #define get_cycles()	arch_timer_read_counter()
+#endif
 
 #include <asm-generic/timex.h>
 

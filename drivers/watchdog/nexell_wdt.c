@@ -295,6 +295,7 @@ static int nexell_wdt_probe(struct platform_device *pdev)
 	wdt->wdd.max_timeout = nexell_wdt_max_timeout(wdt);
 	if (!wdt->wdd.max_timeout)
 		return dev_err_probe(dev, -EINVAL, "watchdog clock is too fast\n");
+	wdt->wdd.max_hw_heartbeat_ms = wdt->wdd.max_timeout * 1000;
 
 	watchdog_set_drvdata(&wdt->wdd, wdt);
 	watchdog_init_timeout(&wdt->wdd, timeout, dev);
