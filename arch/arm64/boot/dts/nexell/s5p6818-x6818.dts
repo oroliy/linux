@@ -2,6 +2,7 @@
 
 /dts-v1/;
 
+#include <dt-bindings/input/input.h>
 #include "s5p6818.dtsi"
 
 / {
@@ -10,8 +11,13 @@
 
 	aliases {
 		ethernet0 = &gmac;
-		mshc0 = &mmc2;
+		mshc0 = &mmc0;
+		mshc1 = &mmc1;
+		mshc2 = &mmc2;
 		serial0 = &uart0;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
 	};
 
 	chosen {
@@ -26,6 +32,65 @@
 			stride = <4096>;
 			format = "x8r8g8b8";
 		};
+	};
+
+	gpio_keys: gpio-keys {
+		compatible = "gpio-keys";
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_pins>;
+
+		button-power {
+			label = "Power";
+			gpios = <&alive 0 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+			wakeup-source;
+		};
+
+		button-volup {
+			label = "Volume Up";
+			gpios = <&gpiob 30 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		button-voldn {
+			label = "Volume Down";
+			gpios = <&gpiob 31 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+
+		button-menu {
+			label = "Menu";
+			gpios = <&gpiob 9 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_MENU>;
+		};
+
+		button-back {
+			label = "Back";
+			gpios = <&gpioa 28 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_BACK>;
+		};
+	};
+
+	gpio_leds: leds {
+		compatible = "gpio-leds";
+
+		led0 {
+			label = "x6818:blue:user";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "heartbeat";
+			default-state = "off";
+		};
+	};
+
+	beeper: beeper {
+		compatible = "gpio-beeper";
+		gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+	};
+
+	ir_receiver: ir-receiver {
+		compatible = "gpio-ir-receiver";
+		gpios = <&gpiod 8 GPIO_ACTIVE_LOW>;
+		linux,rc-map-name = "rc-rc6-mce";
 	};
 
 	reserved-memory {
@@ -80,7 +145,32 @@
 	};
 };
 
+&mmc0 {
+	cd-gpios = <&alive 1 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&mmc1 {
+	cd-gpios = <&gpiob 25 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
 &mmc2 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <100000>;
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <200000>;
+	status = "okay";
+};
+
+&i2c2 {
+	clock-frequency = <100000>;
 	status = "okay";
 };
 
