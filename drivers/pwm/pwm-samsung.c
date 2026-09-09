@@ -19,6 +19,7 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/pwm.h>
+#include <linux/reset.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 #include <linux/time.h>
@@ -501,6 +502,8 @@ static const struct of_device_id samsung_pwm_matches[] = {
 	{ .compatible = "samsung,s5p6440-pwm", .data = &s5p64x0_variant },
 	{ .compatible = "samsung,s5pc100-pwm", .data = &s5pc100_variant },
 	{ .compatible = "samsung,exynos4210-pwm", .data = &s5p64x0_variant },
+	{ .compatible = "nexell,s5p4418-pwm", .data = &s5pc100_variant },
+	{ .compatible = "nexell,s5p6818-pwm", .data = &s5pc100_variant },
 	{},
 };
 MODULE_DEVICE_TABLE(of, samsung_pwm_matches);
@@ -569,6 +572,13 @@ static int pwm_samsung_probe(struct platform_device *pdev)
 	our_chip->base = devm_platform_ioremap_resource(pdev, 0);
 	if (IS_ERR(our_chip->base))
 		return PTR_ERR(our_chip->base);
+
+	{
+		struct reset_control *rst = devm_reset_control_get_optional_shared(&pdev->dev, "pwm-reset");
+		if (IS_ERR(rst))
+			return dev_err_probe(dev, PTR_ERR(rst), "failed to get pwm reset\n");
+		reset_control_deassert(rst);
+	}
 
 	our_chip->base_clk = devm_clk_get_enabled(&pdev->dev, "timers");
 	if (IS_ERR(our_chip->base_clk))

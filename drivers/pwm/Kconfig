@@ -553,7 +553,7 @@ config PWM_RZ_MTU3
 
 config PWM_SAMSUNG
 	tristate "Samsung PWM support"
-	depends on PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || COMPILE_TEST
+	depends on PLAT_SAMSUNG || ARCH_S5PV210 || ARCH_EXYNOS || ARCH_NEXELL_S5P6818 || COMPILE_TEST
 	depends on HAS_IOMEM
 	help
 	  Generic PWM framework driver for Samsung S3C24xx, S3C64xx, S5Pv210

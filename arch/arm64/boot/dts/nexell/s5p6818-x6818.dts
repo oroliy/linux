@@ -11,9 +11,9 @@
 
 	aliases {
 		ethernet0 = &gmac;
-		mshc0 = &mmc0;
-		mshc1 = &mmc1;
-		mshc2 = &mmc2;
+		mmc0 = &mmc2;
+		mmc1 = &mmc0;
+		mmc2 = &mmc1;
 		serial0 = &uart0;
 		i2c0 = &i2c0;
 		i2c1 = &i2c1;
@@ -35,7 +35,9 @@
 	};
 
 	gpio_keys: gpio-keys {
-		compatible = "gpio-keys";
+		compatible = "gpio-keys-polled";
+		poll-interval = <50>;
+		autorepeat;
 		pinctrl-names = "default";
 		pinctrl-0 = <&key_pins>;
 
@@ -43,7 +45,6 @@
 			label = "Power";
 			gpios = <&alive 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_POWER>;
-			wakeup-source;
 		};
 
 		button-volup {
@@ -76,10 +77,76 @@
 
 		led0 {
 			label = "x6818:blue:user";
-			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "heartbeat";
 			default-state = "off";
 		};
+	};
+
+	vcc2v8_cam: regulator-vcc2v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc2v8_cam";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		regulator-always-on;
+	};
+
+	vcc1v8_cam: regulator-vcc1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc1v8_cam";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+
+	vcc1v5_cam: regulator-vcc1v5 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc1v5_cam";
+		regulator-min-microvolt = <1500000>;
+		regulator-max-microvolt = <1500000>;
+		regulator-always-on;
+	};
+
+	vcc_cam_pwr: regulator-vcc-cam-pwr {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_cam_pwr";
+		gpio = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	i2c_pmic: i2c-pmic {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpioc 16 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpioc 15 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		axp228: pmic@34 {
+			compatible = "x-powers,axp221";
+			reg = <0x34>;
+
+			regulators {
+				vcam1_1v8: dldo2 {
+					regulator-name = "vcam1_1.8V";
+					regulator-min-microvolt = <1800000>;
+					regulator-max-microvolt = <1800000>;
+					regulator-always-on;
+					regulator-boot-on;
+				};
+			};
+		};
+	};
+
+	cam_xclk: cam-xclk {
+		compatible = "pwm-clock";
+		#clock-cells = <0>;
+		clock-frequency = <24000000>;
+		clock-output-names = "cam_xclk";
+		pwms = <&pwm 1 42 0>;
 	};
 
 	beeper: beeper {
@@ -91,6 +158,7 @@
 		compatible = "gpio-ir-receiver";
 		gpios = <&gpiod 8 GPIO_ACTIVE_LOW>;
 		linux,rc-map-name = "rc-rc6-mce";
+		status = "disabled";
 	};
 
 	reserved-memory {
@@ -162,6 +230,34 @@
 &i2c0 {
 	clock-frequency = <100000>;
 	status = "okay";
+
+	ov5645: camera@3c {
+		compatible = "ovti,ov5645";
+		reg = <0x3c>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_pins>;
+		clocks = <&cam_xclk>;
+		clock-names = "xclk";
+		clock-frequency = <24000000>;
+		reset-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+		enable-gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+		vdddo-supply = <&vcam1_1v8>;
+		vdda-supply = <&vcc2v8_cam>;
+		vddd-supply = <&vcc1v5_cam>;
+		status = "okay";
+
+		port {
+			ov5645_to_mipi: endpoint {
+				data-lanes = <1 2>;
+				clock-noncontinuous;
+				link-frequencies = /bits/ 64 <210000000>;
+			};
+		};
+	};
+};
+
+&pwm {
+	status = "okay";
 };
 
 &i2c1 {
@@ -194,6 +290,13 @@
 		nexell,pin-function = <0>;
 		nexell,pin-pull = <2>;
 		nexell,pin-strength = <3>;
+	};
+
+	cam_pins: cam-pins {
+		nexell,pins = "gpioc-5", "gpioc-6";
+		nexell,pin-function = <0>;
+		nexell,pin-pull = <0>;
+		nexell,pin-strength = <0>;
 	};
 };
 

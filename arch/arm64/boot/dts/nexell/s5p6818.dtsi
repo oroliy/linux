@@ -270,6 +270,90 @@
 				nexell,pin-strength = <1>;
 			};
 
+			i2c0_sda_pin: i2c0-sda-dft {
+				nexell,pins = "gpiod-3";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c0_scl_pin: i2c0-scl-dft {
+				nexell,pins = "gpiod-2";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c0_pin_sda_gpio: i2c0-sda-gpio {
+				nexell,pins = "gpiod-3";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c0_pin_scl_gpio: i2c0-scl-gpio {
+				nexell,pins = "gpiod-2";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c1_sda_pin: i2c1-sda-dft {
+				nexell,pins = "gpiod-5";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c1_scl_pin: i2c1-scl-dft {
+				nexell,pins = "gpiod-4";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c1_pin_sda_gpio: i2c1-sda-gpio {
+				nexell,pins = "gpiod-5";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c1_pin_scl_gpio: i2c1-scl-gpio {
+				nexell,pins = "gpiod-4";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c2_sda_pin: i2c2-sda-dft {
+				nexell,pins = "gpiod-7";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c2_scl_pin: i2c2-scl-dft {
+				nexell,pins = "gpiod-6";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c2_pin_sda_gpio: i2c2-sda-gpio {
+				nexell,pins = "gpiod-7";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
+			i2c2_pin_scl_gpio: i2c2-scl-gpio {
+				nexell,pins = "gpiod-6";
+				nexell,pin-function = <0>;
+				nexell,pin-pull = <2>;
+				nexell,pin-strength = <0>;
+			};
+
 			i2c0_pins: i2c0-pins {
 				nexell,pins = "gpiod-2", "gpiod-3";
 				nexell,pin-function = <1>;
@@ -295,6 +379,34 @@
 				nexell,pins = "gpiob-30", "gpiob-31", "gpiob-9", "gpioa-28";
 				nexell,pin-function = <0>;
 				nexell,pin-pull = <1>;
+				nexell,pin-strength = <0>;
+			};
+
+			pwm0_pin: pwm0-pin {
+				nexell,pins = "gpiod-1";
+				nexell,pin-function = <1>;
+				nexell,pin-pull = <0>;
+				nexell,pin-strength = <0>;
+			};
+
+			pwm1_pin: pwm1-pin {
+				nexell,pins = "gpioc-13";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <0>;
+				nexell,pin-strength = <0>;
+			};
+
+			pwm2_pin: pwm2-pin {
+				nexell,pins = "gpioc-14";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <0>;
+				nexell,pin-strength = <0>;
+			};
+
+			pwm3_pin: pwm3-pin {
+				nexell,pins = "gpiod-0";
+				nexell,pin-function = <2>;
+				nexell,pin-pull = <0>;
 				nexell,pin-strength = <0>;
 			};
 		};
@@ -465,12 +577,30 @@
 			status = "disabled";
 		};
 
+		pwm: pwm@c0018000 {
+			compatible = "nexell,s5p6818-pwm", "samsung,s5pc100-pwm";
+			reg = <0xc0018000 0x1000>;
+			resets = <&nexell_reset RESET_ID_PWM>;
+			reset-names = "pwm-reset";
+			clocks = <&clocks NEXELL_CLK_TIMER0>;
+			clock-names = "timers";
+			pinctrl-names = "default";
+			pinctrl-0 = <&pwm0_pin &pwm1_pin &pwm2_pin &pwm3_pin>;
+			#pwm-cells = <3>;
+			samsung,pwm-outputs = <0>, <1>, <2>, <3>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@c00a4000 {
-			compatible = "samsung,s3c2440-i2c";
+			compatible = "nexell,s5p6818-i2c", "nexell,s5p4418-i2c";
 			reg = <0xc00a4000 0x1000>;
 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clocks NEXELL_CLK_I2C0>;
 			clock-names = "i2c";
+			resets = <&nexell_reset RESET_ID_I2C0>;
+			reset-names = "i2c-reset";
+			gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>,
+				<&gpiod 2 GPIO_ACTIVE_HIGH>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c0_pins>;
 			#address-cells = <1>;
@@ -479,11 +609,15 @@
 		};
 
 		i2c1: i2c@c00a5000 {
-			compatible = "samsung,s3c2440-i2c";
+			compatible = "nexell,s5p6818-i2c", "nexell,s5p4418-i2c";
 			reg = <0xc00a5000 0x1000>;
 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clocks NEXELL_CLK_I2C1>;
 			clock-names = "i2c";
+			resets = <&nexell_reset RESET_ID_I2C1>;
+			reset-names = "i2c-reset";
+			gpios = <&gpiod 5 GPIO_ACTIVE_HIGH>,
+				<&gpiod 4 GPIO_ACTIVE_HIGH>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c1_pins>;
 			#address-cells = <1>;
@@ -492,11 +626,15 @@
 		};
 
 		i2c2: i2c@c00a6000 {
-			compatible = "samsung,s3c2440-i2c";
+			compatible = "nexell,s5p6818-i2c", "nexell,s5p4418-i2c";
 			reg = <0xc00a6000 0x1000>;
 			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clocks NEXELL_CLK_I2C2>;
 			clock-names = "i2c";
+			resets = <&nexell_reset RESET_ID_I2C2>;
+			reset-names = "i2c-reset";
+			gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>,
+				<&gpiod 6 GPIO_ACTIVE_HIGH>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2c2_pins>;
 			#address-cells = <1>;
