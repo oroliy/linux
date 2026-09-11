@@ -206,11 +206,17 @@
 
 &mmc0 {
 	cd-gpios = <&alive 1 GPIO_ACTIVE_LOW>;
+	cd-debounce-delay-ms = <100>;
+	cap-sd-highspeed;
+	disable-wp;
 	status = "okay";
 };
 
 &mmc1 {
 	cd-gpios = <&gpiob 25 GPIO_ACTIVE_LOW>;
+	cd-debounce-delay-ms = <100>;
+	cap-sd-highspeed;
+	disable-wp;
 	status = "okay";
 };
 

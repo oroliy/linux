@@ -952,28 +952,33 @@ static int dw_mci_get_cd(struct mmc_host *mmc)
 	struct dw_mci *host = slot->host;
 	int gpio_cd = mmc_gpio_get_cd(mmc);
 
-	/* Use platform get_cd function, else try onboard card detect */
-	if (((mmc->caps & MMC_CAP_NEEDS_POLL)
-				|| !mmc_card_is_removable(mmc))) {
+	/* Slot GPIO card detect takes precedence if defined */
+	if (gpio_cd >= 0) {
+		present = gpio_cd;
+	} else if (!mmc_card_is_removable(mmc)) {
 		present = 1;
 
 		if (!test_bit(DW_MMC_CARD_PRESENT, &slot->flags)) {
-			if (mmc->caps & MMC_CAP_NEEDS_POLL) {
-				dev_info(&mmc->class_dev,
-					"card is polling.\n");
-			} else {
-				dev_info(&mmc->class_dev,
-					"card is non-removable.\n");
-			}
+			dev_info(&mmc->class_dev,
+				"card is non-removable.\n");
 			set_bit(DW_MMC_CARD_PRESENT, &slot->flags);
 		}
 
 		return present;
-	} else if (gpio_cd >= 0)
-		present = gpio_cd;
-	else
+	} else if (mmc->caps & MMC_CAP_NEEDS_POLL) {
+		present = 1;
+
+		if (!test_bit(DW_MMC_CARD_PRESENT, &slot->flags)) {
+			dev_info(&mmc->class_dev,
+				"card is polling.\n");
+			set_bit(DW_MMC_CARD_PRESENT, &slot->flags);
+		}
+
+		return present;
+	} else {
 		present = (mci_readl(slot->host, CDETECT) & (1 << slot->id))
 			== 0 ? 1 : 0;
+	}
 
 	spin_lock_bh(&host->lock);
 	if (present && !test_and_set_bit(DW_MMC_CARD_PRESENT, &slot->flags))
