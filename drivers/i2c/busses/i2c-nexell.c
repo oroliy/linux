@@ -75,6 +75,7 @@ struct nx_i2c_param {
 	int trans_mode;
 	int running;
 	unsigned int trans_status;
+	bool polling;
 	struct pinctrl *pctrl;
 	struct pinctrl_state *pins_default;
 	struct pinctrl_state *pins_sda_dft;
@@ -416,9 +417,15 @@ static irqreturn_t nx_i2c_irq_handler(int irqno, void *dev_id)
 	return IRQ_WAKE_THREAD;
 }
 
+static bool nx_i2c_poll_mode = true;
+module_param_named(polling, nx_i2c_poll_mode, bool, 0444);
+MODULE_PARM_DESC(polling,
+	"Poll the IP pending flag instead of waiting for the completion IRQ (default: true)");
+
 static int nx_i2c_trans_done(struct nx_i2c_param *par)
 {
 	struct i2c_msg *msg = par->msg;
+	void __iomem *base = par->hw.base_addr;
 	int wait, timeout, ret = 0;
 
 	par->condition = 0;
@@ -427,11 +434,45 @@ static int nx_i2c_trans_done(struct nx_i2c_param *par)
 	else
 		wait = msecs_to_jiffies(par->timeout);
 
-	timeout = wait_event_timeout(par->wait_q, par->condition, wait);
+	if (par->polling) {
+		/*
+		 * On S5P6818 the master-transfer completion IRQ is not
+		 * delivered in the current platform state, so wait_event
+		 * always runs the full timeout.  Poll the IP pending flag
+		 * and run the same handler body the IRQ would have run.
+		 */
+		int poll_loops = wait;
+
+		while (poll_loops-- > 0) {
+			if (par->condition ||
+			    par->trans_status == I2C_TRANS_DONE ||
+			    par->trans_status == I2C_TRANS_ERR) {
+				par->condition = 1;
+				break;
+			}
+			if (_INTSTAT(base)) {
+				(void)nx_i2c_irq_thread(0, par);
+				continue;
+			}
+			mdelay(1);
+		}
+	} else {
+		timeout = wait_event_timeout(par->wait_q, par->condition, wait);
+	}
+
 	if (par->condition) {
 		if (I2C_TRANS_ERR == par->trans_status)
 			ret = -1;
 	} else {
+		dev_err(par->dev,
+			"Fail, i2c.%d %s [0x%02x] cond(%d) pend(%s) arbit(%s) mode(%s) tran(%d:%d,%d:%d) wait(%dms)\n",
+			par->hw.port, (msg->flags & I2C_M_RD) ? "R" : "W",
+			msg->addr << 1, par->condition,
+			_INTSTAT(base) ? "yes" : "no",
+			_ARBITSTAT(base) ? "busy" : "free",
+			par->polling ? "polling" : "irq",
+			par->trans_count, msg->len,
+			par->irq_count, par->thd_count, par->timeout);
 		ret = -1;
 	}
 
@@ -613,6 +654,7 @@ static int nx_i2c_probe(struct platform_device *pdev)
 	par->hw.scl_io = of_get_named_gpio(pdev->dev.of_node, "gpios", 1);
 	par->no_stop = 0;
 	par->timeout = WAIT_ACK_TIME;
+	par->polling = nx_i2c_poll_mode;
 
 	of_property_read_u32(pdev->dev.of_node, "sda-delay", &par->sda_delay);
 	if (!par->sda_delay)
