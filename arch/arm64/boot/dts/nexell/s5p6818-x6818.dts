@@ -265,9 +265,15 @@
 	status = "okay";
 };
 
+/*
+ * The S5P6818 hardware I2C controllers do not start transfers in the
+ * current platform state (registers alive only after an RSTCON pulse;
+ * START never toggles SCL).  Keep i2c0 disabled: its pins serve the
+ * bit-banged camera bus under /, and the driver's 500 ms timeout makes
+ * every probe of an absent address crawl.
+ */
 &i2c0 {
-	clock-frequency = <100000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm {
