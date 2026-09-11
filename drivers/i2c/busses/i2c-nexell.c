@@ -553,7 +553,7 @@ static void nx_i2c_set_clk_param(struct nx_i2c_param *par, unsigned long rate)
 
 	for (i = 0; i < CLKSRC_CNT; i++) {
 		src = (i == 0) ? CLKSRC_DIV16 : CLKSRC_DIV256;
-		for (div = CLKSCALE_MIN; div < CLKSCALE_MAX; div++) {
+		for (div = CLKSCALE_MIN; div <= CLKSCALE_MAX; div++) {
 			get_real_clk = rate / src / div;
 			if (get_real_clk > req_rate)
 				calc_clk = get_real_clk - req_rate;
@@ -582,8 +582,8 @@ static void nx_i2c_set_clk_param(struct nx_i2c_param *par, unsigned long rate)
 	par->hw.clkscale = t_div;
 	par->clk_in = rate;
 
-	dev_dbg(par->dev, "i2c.%d: %8ld hz [pclk=%ld, clk = %3d, scale=%2d]\n",
-		par->hw.port, real_clk, rate, par->hw.clksrc, par->hw.clkscale - 1);
+	dev_info(par->dev, "i2c.%d: %8ld Hz [pclk=%ld Hz, clksrc=%3d, clkscale=%2d]\n",
+		 par->hw.port, real_clk, rate, par->hw.clksrc, par->hw.clkscale - 1);
 }
 
 static int nx_i2c_probe(struct platform_device *pdev)
@@ -636,6 +636,10 @@ static int nx_i2c_probe(struct platform_device *pdev)
 		return ret;
 
 	rate = clk_get_rate(par->clk);
+	if (!rate || rate > 200000000) {
+		dev_warn(par->dev, "invalid clock rate %lu Hz, clamping to 100 MHz\n", rate);
+		rate = 100000000;
+	}
 	nx_i2c_set_clk_param(par, rate);
 
 	par->rst = devm_reset_control_get_optional_exclusive(&pdev->dev, NULL);

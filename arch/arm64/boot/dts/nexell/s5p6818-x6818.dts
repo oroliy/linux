@@ -88,7 +88,6 @@
 		regulator-name = "vcc2v8_cam";
 		regulator-min-microvolt = <2800000>;
 		regulator-max-microvolt = <2800000>;
-		vin-supply = <&vcc_cam_pwr>;
 		regulator-always-on;
 	};
 
@@ -105,17 +104,7 @@
 		regulator-name = "vcc1v5_cam";
 		regulator-min-microvolt = <1500000>;
 		regulator-max-microvolt = <1500000>;
-		vin-supply = <&vcc_cam_pwr>;
 		regulator-always-on;
-	};
-
-	vcc_cam_pwr: regulator-vcc-cam-pwr {
-		compatible = "regulator-fixed";
-		regulator-name = "vcc_cam_pwr";
-		gpio = <&gpioc 4 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		regulator-always-on;
-		regulator-boot-on;
 	};
 
 	i2c_pmic: i2c-pmic {
@@ -242,7 +231,7 @@
 		clock-names = "xclk";
 		clock-frequency = <24000000>;
 		reset-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
-		enable-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
 		vdddo-supply = <&vcam1_1v8>;
 		vdda-supply = <&vcc2v8_cam>;
 		vddd-supply = <&vcc1v5_cam>;
@@ -277,6 +266,22 @@
 };
 
 &pinctrl {
+	pinctrl-names = "default";
+	pinctrl-0 = <&dp_rgb_pins>;
+
+	dp_rgb_pins: dp-rgb-pins {
+		nexell,pins = "gpioa-0", "gpioa-1", "gpioa-2", "gpioa-3",
+			       "gpioa-4", "gpioa-5", "gpioa-6", "gpioa-7",
+			       "gpioa-8", "gpioa-9", "gpioa-10", "gpioa-11",
+			       "gpioa-12", "gpioa-13", "gpioa-14", "gpioa-15",
+			       "gpioa-16", "gpioa-17", "gpioa-18", "gpioa-19",
+			       "gpioa-20", "gpioa-21", "gpioa-22", "gpioa-23",
+			       "gpioa-24", "gpioa-25", "gpioa-26", "gpioa-27";
+		nexell,pin-function = <1>;
+		nexell,pin-pull = <0>;
+		nexell,pin-strength = <2>;
+	};
+
 	gmac_rgmii_pins: gmac-rgmii-pins {
 		nexell,pins = "gpioe-7", "gpioe-8", "gpioe-9", "gpioe-10",
 			       "gpioe-11", "gpioe-14", "gpioe-15", "gpioe-16",
@@ -295,7 +300,7 @@
 	};
 
 	cam_pins: cam-pins {
-		nexell,pins = "gpioc-5", "gpioc-6";
+		nexell,pins = "gpioc-4", "gpioc-5";
 		nexell,pin-function = <0>;
 		nexell,pin-pull = <0>;
 		nexell,pin-strength = <0>;

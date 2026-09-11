@@ -999,9 +999,6 @@ static int nexell_pinctrl_probe(struct platform_device *pdev)
 	ret = devm_pinctrl_register_and_init(dev, &pc->desc, pc, &pc->pctldev);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to register pinctrl\n");
-	ret = pinctrl_enable(pc->pctldev);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed to enable pinctrl\n");
 
 	ret = nexell_register_pin_groups(pc);
 	if (ret)
@@ -1021,6 +1018,10 @@ static int nexell_pinctrl_probe(struct platform_device *pdev)
 					    "failed to register GPIO bank %s\n",
 					    nexell_bank_names[i]);
 	}
+
+	ret = pinctrl_enable(pc->pctldev);
+	if (ret)
+		return dev_err_probe(dev, ret, "failed to enable pinctrl\n");
 
 	dev_info(dev, "S5P6818 pinctrl registered: %u pins, %u GPIO banks\n",
 		 NEXELL_TOTAL_PINS, NEXELL_GPIO_BANKS);

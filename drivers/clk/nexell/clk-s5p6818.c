@@ -22,6 +22,7 @@
 #include <dt-bindings/clock/nexell,s5p6818-clock.h>
 
 #define NEXELL_CLKPWR_PLL0	0x008
+#define NEXELL_CLKPWR_DVOREG_BUS	0x024
 #define NEXELL_CLKPWR_PLL_SSCG0	0x048
 
 #define NEXELL_CLKGEN_ENABLE	0x000
@@ -46,6 +47,7 @@ struct nexell_clkgen_desc {
 	u8 stage;
 	bool gate_bclk;
 	bool gate_pclk;
+	bool is_bus_pclk;
 };
 
 struct nexell_clkgen_res {
@@ -255,6 +257,22 @@ static const struct clk_ops nexell_clkgen_ops = {
 	.set_rate = nexell_clkgen_set_rate,
 };
 
+static const char * const nexell_bus_pclk_parent[] = {
+	"bus_pclk",
+};
+
+static unsigned long nexell_pclk_gate_recalc_rate(struct clk_hw *hw,
+						  unsigned long parent_rate)
+{
+	return parent_rate;
+}
+
+static const struct clk_ops nexell_pclk_gate_ops = {
+	.enable = nexell_clkgen_enable,
+	.disable = nexell_clkgen_disable,
+	.recalc_rate = nexell_pclk_gate_recalc_rate,
+};
+
 static unsigned long nexell_pll_rate(void __iomem *base, unsigned int pll,
 					     unsigned long xin_rate)
 {
@@ -280,21 +298,39 @@ static unsigned long nexell_pll_rate(void __iomem *base, unsigned int pll,
 	return (unsigned long)rate;
 }
 
+static unsigned long nexell_bus_pclk_rate(void __iomem *base,
+					  struct clk_hw_onecell_data *onecell)
+{
+	u32 val = readl(base + NEXELL_CLKPWR_DVOREG_BUS);
+	unsigned int pll = val & 0x7;
+	unsigned int div0 = ((val >> 3) & 0x3f) + 1;
+	unsigned int div1 = ((val >> 9) & 0x3f) + 1;
+	unsigned long pll_rate = 0;
+
+	if (pll < 4 && !IS_ERR_OR_NULL(onecell->hws[NEXELL_CLK_PLL0 + pll]))
+		pll_rate = clk_hw_get_rate(onecell->hws[NEXELL_CLK_PLL0 + pll]);
+
+	if (!pll_rate || !div0 || !div1)
+		return 100000000;
+
+	return (pll_rate / div0) / div1;
+}
+
 static const struct nexell_clkgen_desc nexell_clkgen_descs[] = {
-	{ NEXELL_CLK_UART0, "uart0", "uart0", 0, false, false },
-	{ NEXELL_CLK_TIMER0, "timer0", "timer0", 0, false, false },
-	{ NEXELL_CLK_TIMER1, "timer1", "timer1", 0, false, false },
-	{ NEXELL_CLK_SDMMC0, "sdmmc0", "sdmmc0", 0, false, true },
-	{ NEXELL_CLK_SDMMC1, "sdmmc1", "sdmmc1", 0, false, true },
-	{ NEXELL_CLK_SDMMC2, "sdmmc2", "sdmmc2", 0, false, true },
-	{ NEXELL_CLK_GMAC, "gmac", "gmac", 0, false, false },
-	{ NEXELL_CLK_GMAC_TX, "gmac-tx", "gmac", 1, false, false },
-	{ NEXELL_CLK_USBHOST, "usbhost", "usbhost", 0, true, false },
-	{ NEXELL_CLK_USBHOST_REF, "usbhost-ref", "usbhost", 1, false, false },
-	{ NEXELL_CLK_MIPI, "mipi", "mipi", 0, false, false },
-	{ NEXELL_CLK_I2C0, "i2c0", "i2c0", 0, false, true },
-	{ NEXELL_CLK_I2C1, "i2c1", "i2c1", 0, false, true },
-	{ NEXELL_CLK_I2C2, "i2c2", "i2c2", 0, false, true },
+	{ NEXELL_CLK_UART0, "uart0", "uart0", 0, false, false, false },
+	{ NEXELL_CLK_TIMER0, "timer0", "timer0", 0, false, false, false },
+	{ NEXELL_CLK_TIMER1, "timer1", "timer1", 0, false, false, false },
+	{ NEXELL_CLK_SDMMC0, "sdmmc0", "sdmmc0", 0, false, true, false },
+	{ NEXELL_CLK_SDMMC1, "sdmmc1", "sdmmc1", 0, false, true, false },
+	{ NEXELL_CLK_SDMMC2, "sdmmc2", "sdmmc2", 0, false, true, false },
+	{ NEXELL_CLK_GMAC, "gmac", "gmac", 0, false, false, false },
+	{ NEXELL_CLK_GMAC_TX, "gmac-tx", "gmac", 1, false, false, false },
+	{ NEXELL_CLK_USBHOST, "usbhost", "usbhost", 0, true, false, false },
+	{ NEXELL_CLK_USBHOST_REF, "usbhost-ref", "usbhost", 1, false, false, false },
+	{ NEXELL_CLK_MIPI, "mipi", "mipi", 0, false, false, false },
+	{ NEXELL_CLK_I2C0, "i2c0", "i2c0", 0, false, true, true },
+	{ NEXELL_CLK_I2C1, "i2c1", "i2c1", 0, false, true, true },
+	{ NEXELL_CLK_I2C2, "i2c2", "i2c2", 0, false, true, true },
 };
 
 static int nexell_clkgen_register(struct nexell_clkctrl *ctrl,
@@ -347,10 +383,17 @@ static int nexell_clkgen_register(struct nexell_clkctrl *ctrl,
 	clk->stage = desc->stage;
 	clk->lock = &ctrl->lock;
 	init.name = desc->name;
-	init.ops = &nexell_clkgen_ops;
-	init.parent_names = nexell_parent_names;
-	init.num_parents = ARRAY_SIZE(nexell_parent_names);
-	init.flags = CLK_SET_RATE_PARENT;
+	if (desc->is_bus_pclk) {
+		init.ops = &nexell_pclk_gate_ops;
+		init.parent_names = nexell_bus_pclk_parent;
+		init.num_parents = ARRAY_SIZE(nexell_bus_pclk_parent);
+		init.flags = CLK_SET_RATE_PARENT;
+	} else {
+		init.ops = &nexell_clkgen_ops;
+		init.parent_names = nexell_parent_names;
+		init.num_parents = ARRAY_SIZE(nexell_parent_names);
+		init.flags = CLK_SET_RATE_PARENT;
+	}
 	clk->hw.init = &init;
 
 	ret = devm_clk_hw_register(ctrl->dev, &clk->hw);
@@ -365,6 +408,8 @@ static int nexell_clk_probe(struct platform_device *pdev)
 {
 	struct nexell_clkctrl *ctrl;
 	struct clk *xin;
+	struct clk_hw *bus_pclk_hw;
+	unsigned long bus_pclk;
 	unsigned int i;
 	int ret;
 
@@ -417,6 +462,12 @@ static int nexell_clk_probe(struct platform_device *pdev)
 			return PTR_ERR(ctrl->onecell->hws[NEXELL_CLK_PLL0 + i]);
 	}
 
+	bus_pclk = nexell_bus_pclk_rate(ctrl->clkpwr, ctrl->onecell);
+	bus_pclk_hw = devm_clk_hw_register_fixed_rate(&pdev->dev, "bus_pclk",
+						       NULL, 0, bus_pclk);
+	if (IS_ERR(bus_pclk_hw))
+		return PTR_ERR(bus_pclk_hw);
+
 	for (i = 0; i < ARRAY_SIZE(nexell_clkgen_descs); i++) {
 		ret = nexell_clkgen_register(ctrl, &nexell_clkgen_descs[i]);
 		if (ret)
@@ -428,9 +479,10 @@ static int nexell_clk_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	dev_info(&pdev->dev, "S5P6818 clocks registered (PLL0=%lu Hz PLL1=%lu Hz)\n",
+	dev_info(&pdev->dev, "S5P6818 clocks registered (PLL0=%lu Hz PLL1=%lu Hz BUS_PCLK=%lu Hz)\n",
 		 clk_hw_get_rate(ctrl->onecell->hws[NEXELL_CLK_PLL0]),
-		 clk_hw_get_rate(ctrl->onecell->hws[NEXELL_CLK_PLL1]));
+		 clk_hw_get_rate(ctrl->onecell->hws[NEXELL_CLK_PLL1]),
+		 bus_pclk);
 	return 0;
 }
 
