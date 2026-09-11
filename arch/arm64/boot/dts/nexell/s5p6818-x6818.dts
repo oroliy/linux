@@ -140,6 +140,47 @@
 		pwms = <&pwm 1 42 0>;
 	};
 
+	/*
+	 * The S5P6818 hardware I2C controllers do not start transfers in
+	 * the current platform state (registers alive only after an RSTCON
+	 * pulse; START never toggles SCL), so the camera bus runs bit-banged
+	 * on the same I2C0 pins, matching the vendor bootloader which also
+	 * services its PMIC over i2c-gpio.
+	 */
+	i2c_cam: i2c-cam {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpiod 3 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpiod 2 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		ov5645: camera@3c {
+			compatible = "ovti,ov5645";
+			reg = <0x3c>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&cam_pins>;
+			clocks = <&cam_xclk>;
+			clock-names = "xclk";
+			clock-frequency = <24000000>;
+			reset-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
+			enable-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
+			vdddo-supply = <&vcam1_1v8>;
+			vdda-supply = <&vcc2v8_cam>;
+			vddd-supply = <&vcc1v5_cam>;
+			status = "okay";
+
+			port {
+				ov5645_to_mipi: endpoint {
+					data-lanes = <1 2>;
+					clock-noncontinuous;
+					link-frequencies = /bits/ 64 <210000000>;
+				};
+			};
+		};
+	};
+
 	beeper: beeper {
 		compatible = "gpio-beeper";
 		gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
@@ -227,30 +268,6 @@
 &i2c0 {
 	clock-frequency = <100000>;
 	status = "okay";
-
-	ov5645: camera@3c {
-		compatible = "ovti,ov5645";
-		reg = <0x3c>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&cam_pins>;
-		clocks = <&cam_xclk>;
-		clock-names = "xclk";
-		clock-frequency = <24000000>;
-		reset-gpios = <&gpioc 5 GPIO_ACTIVE_LOW>;
-		enable-gpios = <&gpioc 4 GPIO_ACTIVE_HIGH>;
-		vdddo-supply = <&vcam1_1v8>;
-		vdda-supply = <&vcc2v8_cam>;
-		vddd-supply = <&vcc1v5_cam>;
-		status = "okay";
-
-		port {
-			ov5645_to_mipi: endpoint {
-				data-lanes = <1 2>;
-				clock-noncontinuous;
-				link-frequencies = /bits/ 64 <210000000>;
-			};
-		};
-	};
 };
 
 &pwm {
