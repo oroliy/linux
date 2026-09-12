@@ -10,6 +10,7 @@ config PINCTRL_NEXELL
 	select GENERIC_PINCTRL_GROUPS
 	select GENERIC_PINMUX_FUNCTIONS
 	select GPIOLIB
+	select GPIOLIB_IRQCHIP
 	default y
 	help
 	  Enable pin multiplexing, pin configuration, and GPIO support for

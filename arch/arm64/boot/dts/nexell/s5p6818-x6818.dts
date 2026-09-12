@@ -75,9 +75,14 @@
 	gpio_leds: leds {
 		compatible = "gpio-leds";
 
+		/*
+		 * gpioc-12 is MCU_TOUCH_RESET for the MIPI panel per the
+		 * baseboard documentation, so the blue user LED sits on
+		 * gpioc-13 (user LED net) instead.
+		 */
 		led0 {
 			label = "x6818:blue:user";
-			gpios = <&gpioc 12 GPIO_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			linux,default-trigger = "heartbeat";
 			default-state = "off";
 		};
@@ -186,6 +191,33 @@
 		gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
 	};
 
+	/*
+	 * Capacitive touch panel bus, bit-banged on the I2C1 pins
+	 * (SCL=GPIOD4, SDA=GPIOD5) for the same reason as i2c-cam.
+	 */
+	i2c_touch: i2c-touch {
+		compatible = "i2c-gpio";
+		sda-gpios = <&gpiod 5 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		scl-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+		i2c-gpio,delay-us = <2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		touchscreen@40 {
+			compatible = "silead,gsl1680";
+			reg = <0x40>;
+			interrupt-parent = <&gpiob>;
+			interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
+			irq-gpios = <&gpiob 29 GPIO_ACTIVE_HIGH>;
+			reset-gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
+			firmware-name = "gsl1680-x6818.fw";
+			touchscreen-size-x = <1024>;
+			touchscreen-size-y = <600>;
+			status = "okay";
+		};
+	};
+
 	ir_receiver: ir-receiver {
 		compatible = "gpio-ir-receiver";
 		gpios = <&gpiod 8 GPIO_ACTIVE_LOW>;
@@ -276,17 +308,20 @@
 	status = "disabled";
 };
 
-&pwm {
-	status = "okay";
-};
-
+/*
+ * The S5P6818 hardware I2C controllers do not start transfers (see the
+ * i2c-cam note above), so the touch panel bus is also bit-banged on the
+ * I2C1 pins.
+ */
 &i2c1 {
-	clock-frequency = <200000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &i2c2 {
-	clock-frequency = <100000>;
+	status = "disabled";
+};
+
+&pwm {
 	status = "okay";
 };
 

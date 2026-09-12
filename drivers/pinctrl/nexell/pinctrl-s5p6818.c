@@ -12,10 +12,13 @@
 #include <linux/err.h>
 #include <linux/gpio/driver.h>
 #include <linux/io.h>
+#include <linux/irq.h>
+#include <linux/irqchip/chained_irq.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
+#include <linux/of_irq.h>
 #include <linux/platform_device.h>
 #include <linux/pinctrl/pinconf.h>
 #include <linux/pinctrl/pinconf-generic.h>
@@ -36,6 +39,12 @@
 
 #define GPIO_OUT		0x00
 #define GPIO_OUTENB		0x04
+#define GPIO_DETMODE0		0x08
+#define GPIO_DETMODE1		0x0c
+#define GPIO_INTENB		0x10
+#define GPIO_DET		0x14
+#define GPIO_DETMODEEX		0x28
+#define GPIO_DETENB		0x3c
 #define GPIO_PAD		0x18
 #define GPIO_ALTFN0		0x20
 #define GPIO_ALTFN1		0x24
@@ -71,6 +80,7 @@ enum nexell_pinconf_param {
 
 struct nexell_gpio_bank {
 	struct gpio_chip gc;
+	struct irq_chip irq_chip;
 	struct pinctrl_gpio_range range;
 	void __iomem *base;
 	unsigned int pin_base;
@@ -78,6 +88,7 @@ struct nexell_gpio_bank {
 	const char *name;
 	u8 index;
 	bool alive;
+	bool has_irq;
 	spinlock_t lock;
 };
 
@@ -832,6 +843,161 @@ static int nexell_gpio_direction_output(struct gpio_chip *gc,
 	return 0;
 }
 
+/*
+ * GPIO interrupt support.  Each GPIOA..GPIOE bank has one combined
+ * interrupt line to the GIC with per-pin pending in GPIOxDET, a
+ * per-pin enable pair in GPIOxINTENB/GPIOxDETENB and a 3-bit detect
+ * mode in GPIOxDETMODE[x]/GPIOxDETMODEEX matching the vendor
+ * NX_GPIO_INTMODE encoding (0=low, 1=high, 2=falling, 3=rising,
+ * 4=both edges).
+ */
+static void nexell_gpio_irq_ack(struct irq_data *d)
+{
+	struct nexell_gpio_bank *bank = gpiochip_get_data(
+		irq_data_get_irq_chip_data(d));
+
+	writel(BIT(d->hwirq), bank->base + GPIO_DET);
+}
+
+static void nexell_gpio_irq_set_enable(struct irq_data *d, bool enable)
+{
+	struct nexell_gpio_bank *bank = gpiochip_get_data(
+		irq_data_get_irq_chip_data(d));
+	unsigned long flags;
+	u32 value;
+
+	spin_lock_irqsave(&bank->lock, flags);
+	value = readl(bank->base + GPIO_INTENB);
+	value &= ~BIT(d->hwirq);
+	if (enable)
+		value |= BIT(d->hwirq);
+	writel(value, bank->base + GPIO_INTENB);
+
+	value = readl(bank->base + GPIO_DETENB);
+	value &= ~BIT(d->hwirq);
+	if (enable)
+		value |= BIT(d->hwirq);
+	writel(value, bank->base + GPIO_DETENB);
+	spin_unlock_irqrestore(&bank->lock, flags);
+}
+
+static void nexell_gpio_irq_mask(struct irq_data *d)
+{
+	nexell_gpio_irq_set_enable(d, false);
+}
+
+static void nexell_gpio_irq_unmask(struct irq_data *d)
+{
+	nexell_gpio_irq_set_enable(d, true);
+}
+
+static int nexell_gpio_irq_set_type(struct irq_data *d, unsigned int type)
+{
+	struct nexell_gpio_bank *bank = gpiochip_get_data(
+		irq_data_get_irq_chip_data(d));
+	unsigned int offset = d->hwirq;
+	unsigned long flags;
+	u32 mode, value;
+
+	switch (type) {
+	case IRQ_TYPE_LEVEL_LOW:
+		mode = 0;
+		break;
+	case IRQ_TYPE_LEVEL_HIGH:
+		mode = 1;
+		break;
+	case IRQ_TYPE_EDGE_FALLING:
+		mode = 2;
+		break;
+	case IRQ_TYPE_EDGE_RISING:
+		mode = 3;
+		break;
+	case IRQ_TYPE_EDGE_BOTH:
+		mode = 4;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	spin_lock_irqsave(&bank->lock, flags);
+	value = readl(offset < 16 ? bank->base + GPIO_DETMODE0 :
+				    bank->base + GPIO_DETMODE1);
+	value &= ~(0x3 << ((offset % 16) * 2));
+	value |= (mode & 0x3) << ((offset % 16) * 2);
+	writel(value, offset < 16 ? bank->base + GPIO_DETMODE0 :
+				    bank->base + GPIO_DETMODE1);
+
+	value = readl(bank->base + GPIO_DETMODEEX);
+	value &= ~BIT(offset);
+	if (mode & 0x4)
+		value |= BIT(offset);
+	writel(value, bank->base + GPIO_DETMODEEX);
+
+	writel(BIT(offset), bank->base + GPIO_DET);
+	spin_unlock_irqrestore(&bank->lock, flags);
+
+	irq_set_handler_locked(d, (type & IRQ_TYPE_EDGE_BOTH) ?
+			       handle_edge_irq : handle_level_irq);
+
+	return 0;
+}
+
+static void nexell_gpio_irq_handler(struct irq_desc *desc)
+{
+	struct nexell_gpio_bank *bank = irq_desc_get_handler_data(desc);
+	struct irq_chip *chip = irq_desc_get_chip(desc);
+	unsigned long pending;
+	unsigned int offset;
+
+	chained_irq_enter(chip, desc);
+
+	pending = readl(bank->base + GPIO_DET);
+	writel(pending, bank->base + GPIO_DET);
+	for_each_set_bit(offset, &pending, bank->npins)
+		generic_handle_domain_irq(bank->gc.irq.domain, offset);
+
+	chained_irq_exit(chip, desc);
+}
+
+static int nexell_register_gpio_irq(struct nexell_pinctrl *pc,
+				    struct nexell_gpio_bank *bank,
+				    struct device_node *np,
+				    unsigned int index)
+{
+	struct gpio_irq_chip *girq;
+	struct device *dev = pc->dev;
+	struct irq_chip *chip = &bank->irq_chip;
+	int irq;
+
+	irq = platform_get_irq_optional(to_platform_device(dev), index);
+	if (irq < 0)
+		return irq == -ENXIO ? 0 : irq;
+
+	chip->name = devm_kasprintf(dev, GFP_KERNEL, "%s-irq", bank->name);
+	if (!chip->name)
+		return -ENOMEM;
+	chip->irq_ack = nexell_gpio_irq_ack;
+	chip->irq_mask = nexell_gpio_irq_mask;
+	chip->irq_unmask = nexell_gpio_irq_unmask;
+	chip->irq_set_type = nexell_gpio_irq_set_type;
+
+	girq = &bank->gc.irq;
+	girq->chip = chip;
+	girq->handler = handle_bad_irq;
+	girq->default_type = IRQ_TYPE_NONE;
+	girq->num_parents = 1;
+	girq->parents = devm_kcalloc(dev, 1, sizeof(*girq->parents),
+				     GFP_KERNEL);
+	if (!girq->parents)
+		return -ENOMEM;
+	girq->parents[0] = irq;
+	girq->parent_handler = nexell_gpio_irq_handler;
+	girq->parent_handler_data = bank;
+
+	bank->has_irq = true;
+	return 0;
+}
+
 static int nexell_add_functions(struct nexell_pinctrl *pc,
 				struct device_node *parent)
 {
@@ -918,6 +1084,12 @@ static int nexell_register_gpio(struct nexell_pinctrl *pc,
 	bank->gc.of_gpio_n_cells = 2;
 	bank->gc.of_xlate = nexell_gpio_of_xlate;
 #endif
+
+	if (!bank->alive) {
+		ret = nexell_register_gpio_irq(pc, bank, np, index);
+		if (ret)
+			return ret;
+	}
 
 	ret = devm_gpiochip_add_data(pc->dev, &bank->gc, bank);
 	if (ret)
