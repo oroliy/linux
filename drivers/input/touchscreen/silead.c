@@ -66,6 +66,7 @@ enum silead_ts_power {
 struct silead_ts_data {
 	struct i2c_client *client;
 	struct gpio_desc *gpio_power;
+	struct gpio_desc *gpio_reset;
 	struct input_dev *input;
 	struct input_dev *pen_input;
 	struct regulator_bulk_data regulators[2];
@@ -312,33 +313,68 @@ sync:
 	input_sync(input);
 }
 
-static int silead_ts_init(struct i2c_client *client)
+static int silead_ts_configure(struct i2c_client *client)
 {
+	struct device *dev = &client->dev;
 	int error;
 
-	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
-					  SILEAD_CMD_RESET);
-	if (error)
-		goto i2c_write_err;
-	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
-
+	/*
+	 * Number of supported touches, clock and start.  This is the
+	 * post-firmware part of silead_ts_init: once the firmware is
+	 * running, some panels (e.g. GSL1680 with vendor config) NAK the
+	 * SILEAD_CMD_RESET (0x88) byte at SILEAD_REG_RESET, so the
+	 * destructive reset must not be reissued after silead_ts_load_fw.
+	 */
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_TOUCH_NR,
 					  SILEAD_MAX_FINGERS);
-	if (error)
-		goto i2c_write_err;
+	if (error) {
+		dev_err(dev, "Post-fw touch-nr error %d\n", error);
+		return error;
+	}
 	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_CLOCK,
 					  SILEAD_CLOCK);
-	if (error)
-		goto i2c_write_err;
+	if (error) {
+		dev_err(dev, "Post-fw clock error %d\n", error);
+		return error;
+	}
 	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
 					  SILEAD_CMD_START);
+	if (error) {
+		dev_err(dev, "Post-fw start error %d\n", error);
+		return error;
+	}
+	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
+
+	return 0;
+}
+
+static int silead_ts_init(struct i2c_client *client)
+{
+	int error;
+
+	/*
+	 * Reset the chip, then configure finger count, clock and start.
+	 * The SILEAD_CMD_RESET (0x88) write is tolerated to fail: some
+	 * panels (e.g. GSL1680 with vendor-supplied firmware) NAK it
+	 * while accepting every other register write, and the vendor
+	 * driver ignores all write errors outright.
+	 */
+	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
+					  SILEAD_CMD_RESET);
+	if (error)
+		dev_warn(&client->dev,
+			 "Chip reset write error %d ignored, continuing\n",
+			 error);
+	else
+		usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
+
+	error = silead_ts_configure(client);
 	if (error)
 		goto i2c_write_err;
-	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 
 	return 0;
 
@@ -351,11 +387,17 @@ static int silead_ts_reset(struct i2c_client *client)
 {
 	int error;
 
+	/* Same tolerance as silead_ts_init: the 0x88 reset byte may be
+	 * NAKed by a running firmware while everything else works.
+	 */
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
 					  SILEAD_CMD_RESET);
 	if (error)
-		goto i2c_write_err;
-	usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
+		dev_warn(&client->dev,
+			 "Chip reset write error %d ignored, continuing\n",
+			 error);
+	else
+		usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_CLOCK,
 					  SILEAD_CLOCK);
@@ -700,6 +742,25 @@ static int silead_ts_probe(struct i2c_client *client)
 	if (IS_ERR(data->gpio_power))
 		return dev_err_probe(dev, PTR_ERR(data->gpio_power),
 				     "Shutdown GPIO request failed\n");
+
+	/*
+	 * Reset GPIO pin.  The GSL series keep their downloaded firmware
+	 * across warm reboots; without a hardware reset pulse the chip may
+	 * sit in the running-firmware state where the SILEAD_CMD_RESET byte
+	 * is NAKed.  Mirror the vendor sequence: hold low 20 ms, release
+	 * high, wait 20 ms before any I2C traffic.
+	 */
+	data->gpio_reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
+	if (IS_ERR(data->gpio_reset))
+		return dev_err_probe(dev, PTR_ERR(data->gpio_reset),
+				     "Reset GPIO request failed\n");
+
+	if (data->gpio_reset) {
+		gpiod_set_value_cansleep(data->gpio_reset, 0);
+		msleep(20);
+		gpiod_set_value_cansleep(data->gpio_reset, 1);
+		msleep(20);
+	}
 
 	error = silead_ts_setup(client);
 	if (error)
