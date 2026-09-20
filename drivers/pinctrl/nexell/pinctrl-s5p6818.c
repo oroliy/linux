@@ -80,7 +80,6 @@ enum nexell_pinconf_param {
 
 struct nexell_gpio_bank {
 	struct gpio_chip gc;
-	struct irq_chip irq_chip;
 	struct pinctrl_gpio_range range;
 	void __iomem *base;
 	unsigned int pin_base;
@@ -942,6 +941,16 @@ static int nexell_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 	return 0;
 }
 
+static const struct irq_chip nexell_gpio_irq_chip = {
+	.name = "nexell-gpio",
+	.irq_ack = nexell_gpio_irq_ack,
+	.irq_mask = nexell_gpio_irq_mask,
+	.irq_unmask = nexell_gpio_irq_unmask,
+	.irq_set_type = nexell_gpio_irq_set_type,
+	.flags = IRQCHIP_IMMUTABLE,
+	GPIOCHIP_IRQ_RESOURCE_HELPERS,
+};
+
 static void nexell_gpio_irq_handler(struct irq_desc *desc)
 {
 	struct nexell_gpio_bank *bank = irq_desc_get_handler_data(desc);
@@ -966,23 +975,14 @@ static int nexell_register_gpio_irq(struct nexell_pinctrl *pc,
 {
 	struct gpio_irq_chip *girq;
 	struct device *dev = pc->dev;
-	struct irq_chip *chip = &bank->irq_chip;
 	int irq;
 
 	irq = platform_get_irq_optional(to_platform_device(dev), index);
 	if (irq < 0)
 		return irq == -ENXIO ? 0 : irq;
 
-	chip->name = devm_kasprintf(dev, GFP_KERNEL, "%s-irq", bank->name);
-	if (!chip->name)
-		return -ENOMEM;
-	chip->irq_ack = nexell_gpio_irq_ack;
-	chip->irq_mask = nexell_gpio_irq_mask;
-	chip->irq_unmask = nexell_gpio_irq_unmask;
-	chip->irq_set_type = nexell_gpio_irq_set_type;
-
 	girq = &bank->gc.irq;
-	girq->chip = chip;
+	gpio_irq_chip_set_chip(girq, &nexell_gpio_irq_chip);
 	girq->handler = handle_bad_irq;
 	girq->default_type = IRQ_TYPE_NONE;
 	girq->num_parents = 1;

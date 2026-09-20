@@ -352,6 +352,17 @@ static int silead_ts_configure(struct i2c_client *client)
 	return 0;
 }
 
+static int silead_ts_write_reset(struct i2c_client *client, u8 value)
+{
+	union i2c_smbus_data data = { .byte = value };
+
+	/* The running GSL1680 firmware deliberately NAKs only this command. */
+	return i2c_smbus_xfer(client->adapter, client->addr,
+			     client->flags | I2C_M_IGNORE_NAK,
+			     I2C_SMBUS_WRITE, SILEAD_REG_RESET,
+			     I2C_SMBUS_BYTE_DATA, &data);
+}
+
 static int silead_ts_init(struct i2c_client *client)
 {
 	int error;
@@ -363,8 +374,7 @@ static int silead_ts_init(struct i2c_client *client)
 	 * while accepting every other register write, and the vendor
 	 * driver ignores all write errors outright.
 	 */
-	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
-					  SILEAD_CMD_RESET);
+	error = silead_ts_write_reset(client, SILEAD_CMD_RESET);
 	if (error)
 		dev_dbg(&client->dev,
 			"Chip reset write error %d ignored, continuing\n",
@@ -390,8 +400,7 @@ static int silead_ts_reset(struct i2c_client *client)
 	/* Same tolerance as silead_ts_init: the 0x88 reset byte may be
 	 * NAKed by a running firmware while everything else works.
 	 */
-	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
-					  SILEAD_CMD_RESET);
+	error = silead_ts_write_reset(client, SILEAD_CMD_RESET);
 	if (error)
 		dev_dbg(&client->dev,
 			"Chip reset write error %d ignored, continuing\n",
