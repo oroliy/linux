@@ -729,7 +729,8 @@ int stmmac_get_platform_resources(struct platform_device *pdev,
 	if (stmmac_res->wol_irq < 0) {
 		if (stmmac_res->wol_irq == -EPROBE_DEFER)
 			return -EPROBE_DEFER;
-		dev_info(&pdev->dev, "IRQ eth_wake_irq not found\n");
+		/* The wake IRQ is optional; the MAC IRQ is the normal fallback. */
+		dev_dbg(&pdev->dev, "IRQ eth_wake_irq not found\n");
 		stmmac_res->wol_irq = stmmac_res->irq;
 	}
 
@@ -738,7 +739,8 @@ int stmmac_get_platform_resources(struct platform_device *pdev,
 	if (stmmac_res->sfty_irq < 0) {
 		if (stmmac_res->sfty_irq == -EPROBE_DEFER)
 			return -EPROBE_DEFER;
-		dev_info(&pdev->dev, "IRQ sfty not found\n");
+		/* Safety IRQ support is optional on this controller. */
+		dev_dbg(&pdev->dev, "IRQ sfty not found\n");
 	}
 
 	stmmac_res->addr = devm_platform_ioremap_resource(pdev, 0);

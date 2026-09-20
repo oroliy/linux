@@ -211,6 +211,8 @@
 			interrupts = <29 IRQ_TYPE_EDGE_FALLING>;
 			irq-gpios = <&gpiob 29 GPIO_ACTIVE_HIGH>;
 			reset-gpios = <&gpioc 12 GPIO_ACTIVE_HIGH>;
+			vddio-supply = <&vcc1v8_cam>;
+			avdd-supply = <&vcc2v8_cam>;
 			firmware-name = "gsl1680-x6818.fw";
 			touchscreen-size-x = <1024>;
 			touchscreen-size-y = <600>;

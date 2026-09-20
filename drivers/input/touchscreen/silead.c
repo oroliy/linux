@@ -366,9 +366,9 @@ static int silead_ts_init(struct i2c_client *client)
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
 					  SILEAD_CMD_RESET);
 	if (error)
-		dev_warn(&client->dev,
-			 "Chip reset write error %d ignored, continuing\n",
-			 error);
+		dev_dbg(&client->dev,
+			"Chip reset write error %d ignored, continuing\n",
+			error);
 	else
 		usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 
@@ -393,9 +393,9 @@ static int silead_ts_reset(struct i2c_client *client)
 	error = i2c_smbus_write_byte_data(client, SILEAD_REG_RESET,
 					  SILEAD_CMD_RESET);
 	if (error)
-		dev_warn(&client->dev,
-			 "Chip reset write error %d ignored, continuing\n",
-			 error);
+		dev_dbg(&client->dev,
+			"Chip reset write error %d ignored, continuing\n",
+			error);
 	else
 		usleep_range(SILEAD_CMD_SLEEP_MIN, SILEAD_CMD_SLEEP_MAX);
 

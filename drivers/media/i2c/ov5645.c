@@ -1091,10 +1091,9 @@ static int ov5645_probe(struct i2c_client *client)
 
 	/* get system clock (xclk) */
 	ov5645->xclk = devm_clk_get(dev, NULL);
-	if (IS_ERR(ov5645->xclk)) {
-		dev_err(dev, "could not get xclk");
-		return PTR_ERR(ov5645->xclk);
-	}
+	if (IS_ERR(ov5645->xclk))
+		return dev_err_probe(dev, PTR_ERR(ov5645->xclk),
+				     "could not get xclk\n");
 
 	ret = of_property_read_u32(dev->of_node, "clock-frequency", &xclk_freq);
 	if (ret) {
