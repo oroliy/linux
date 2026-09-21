@@ -232,8 +232,18 @@
 		#size-cells = <2>;
 		ranges;
 
-		x6818_framebuffer: framebuffer@46000000 {
-			reg = <0x0 0x46000000 0x0 0x01000000>;
+		ramoops@47000000 {
+			compatible = "ramoops";
+			reg = <0x0 0x47000000 0x0 0x100000>;
+			record-size  = <0x40000>;
+			console-size = <0x40000>;
+			pmsg-size    = <0x40000>;
+			ftrace-size  = <0x40000>;
+			ecc-size     = <16>;
+		};
+
+		x6818_framebuffer: framebuffer@7cf00000 {
+			reg = <0x0 0x7cf00000 0x0 0x01000000>;
 			no-map;
 		};
 
