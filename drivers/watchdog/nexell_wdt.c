@@ -15,6 +15,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
+#include <linux/panic_notifier.h>
 #include <linux/platform_device.h>
 #include <linux/reset.h>
 #include <linux/spinlock.h>
@@ -38,6 +39,30 @@
 #define NEXELL_WDT_DEFAULT_CLOCK		4000000UL
 #define NEXELL_WDT_DEFAULT_TIMEOUT	5U
 
+#define S5P6818_PANIC_MAGIC		0x50414E43 /* 'PANC' */
+#define PHY_BASEADDR_ALIVE		0xC0010800
+#define PHY_BASEADDR_CLKPWR		0xC0010000
+
+static void __iomem *g_alive_base;
+
+static int nexell_panic_notify(struct notifier_block *nb,
+			       unsigned long val, void *data)
+{
+	if (g_alive_base) {
+		/* Enable write to ALIVE domain */
+		writel(1, g_alive_base + 0x000);
+		/* Write 'PANC' magic to scratchpad register (0x070) via SET/RST */
+		writel(S5P6818_PANIC_MAGIC, g_alive_base + 0x06c);
+		writel(~S5P6818_PANIC_MAGIC, g_alive_base + 0x068);
+	}
+	return NOTIFY_OK;
+}
+
+static struct notifier_block nexell_panic_nb = {
+	.notifier_call = nexell_panic_notify,
+	.priority = 255,
+};
+
 static unsigned int timeout = NEXELL_WDT_DEFAULT_TIMEOUT;
 module_param(timeout, uint, 0644);
 MODULE_PARM_DESC(timeout, "Watchdog timeout in seconds");
@@ -48,6 +73,8 @@ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started");
 
 struct nexell_wdt {
 	void __iomem *base;
+	void __iomem *alive_base;
+	void __iomem *clkpwr_base;
 	struct clk *pclk;
 	struct reset_control *reset;
 	struct reset_control *por_reset;
@@ -193,10 +220,19 @@ static int nexell_wdt_set_timeout(struct watchdog_device *wdd,
 }
 
 static int nexell_wdt_restart(struct watchdog_device *wdd,
-				      unsigned long action, void *data)
+			      unsigned long action, void *data)
 {
 	struct nexell_wdt *wdt = watchdog_get_drvdata(wdd);
 	unsigned long flags;
+
+	/* On clean reboot, trigger SoC CLKPWR software reset first */
+	if (wdt->clkpwr_base) {
+		u32 pwrcont = readl(wdt->clkpwr_base + 0x224);
+		pwrcont |= (1 << 3); /* SWRSTENB */
+		writel(pwrcont, wdt->clkpwr_base + 0x224);
+		writel(1 << 12, wdt->clkpwr_base + 0x228); /* SWRESET */
+		mdelay(100);
+	}
 
 	spin_lock_irqsave(&wdt->lock, flags);
 	nexell_wdt_stop_locked(wdt);
@@ -326,6 +362,13 @@ static int nexell_wdt_probe(struct platform_device *pdev)
 	ret = devm_watchdog_register_device(dev, &wdt->wdd);
 	if (ret)
 		return ret;
+
+	wdt->alive_base = devm_ioremap(dev, PHY_BASEADDR_ALIVE, 0x100);
+	wdt->clkpwr_base = devm_ioremap(dev, PHY_BASEADDR_CLKPWR, 0x300);
+	if (wdt->alive_base) {
+		g_alive_base = wdt->alive_base;
+		atomic_notifier_chain_register(&panic_notifier_list, &nexell_panic_nb);
+	}
 
 	dev_info(dev,
 		 "S5P6818 watchdog ready: clock=%lu Hz max=%u s "

@@ -189,6 +189,7 @@
 	beeper: beeper {
 		compatible = "gpio-beeper";
 		gpios = <&gpioc 14 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
 	};
 
 	/*
