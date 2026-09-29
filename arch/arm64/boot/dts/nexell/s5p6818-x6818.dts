@@ -335,7 +335,18 @@
 };
 
 &pwm {
+	/* GPIOC14 drives the buzzer; PWM2 must not claim or toggle it. */
+	pinctrl-0 = <&pwm0_pin &pwm1_pin &pwm3_pin>;
 	status = "okay";
+};
+
+&gpioc {
+	buzzer-off-hog {
+		gpio-hog;
+		gpios = <14 GPIO_ACTIVE_HIGH>;
+		output-low;
+		line-name = "buzzer-off";
+	};
 };
 
 &ohci {
