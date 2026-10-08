@@ -44,6 +44,7 @@
 #define PHY_BASEADDR_CLKPWR		0xC0010000
 
 static void __iomem *g_alive_base;
+static void __iomem *g_wdt_base;
 
 static int nexell_panic_notify(struct notifier_block *nb,
 			       unsigned long val, void *data)
@@ -51,9 +52,19 @@ static int nexell_panic_notify(struct notifier_block *nb,
 	if (g_alive_base) {
 		/* Enable write to ALIVE domain */
 		writel(1, g_alive_base + 0x000);
-		/* Write 'PANC' magic to scratchpad register (0x070) via SET/RST */
+		/* Clear all scratchpad bits first, then set 'PANC' magic */
+		writel(0xFFFFFFFF, g_alive_base + 0x068);
 		writel(S5P6818_PANIC_MAGIC, g_alive_base + 0x06c);
-		writel(~S5P6818_PANIC_MAGIC, g_alive_base + 0x068);
+	}
+	if (g_wdt_base) {
+		/* At the board's 200 MHz PCLK, reset after about 85 ms. */
+		writel(0, g_wdt_base + NEXELL_WDT_WTCLRINT);
+		writel(0x800, g_wdt_base + NEXELL_WDT_WTDAT);
+		writel(0x800, g_wdt_base + NEXELL_WDT_WTCNT);
+		writel(NEXELL_WDT_WTCON_ENABLE | NEXELL_WDT_WTCON_DIV128 |
+		       NEXELL_WDT_WTCON_INTEN | NEXELL_WDT_WTCON_RSTEN |
+		       NEXELL_WDT_WTCON_PRESCALE(0x40),
+		       g_wdt_base + NEXELL_WDT_WTCON);
 	}
 	return NOTIFY_OK;
 }
@@ -367,6 +378,7 @@ static int nexell_wdt_probe(struct platform_device *pdev)
 	wdt->clkpwr_base = devm_ioremap(dev, PHY_BASEADDR_CLKPWR, 0x300);
 	if (wdt->alive_base) {
 		g_alive_base = wdt->alive_base;
+		g_wdt_base = wdt->base;
 		atomic_notifier_chain_register(&panic_notifier_list, &nexell_panic_nb);
 	}
 
