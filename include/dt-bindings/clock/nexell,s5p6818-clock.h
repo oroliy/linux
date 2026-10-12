@@ -26,6 +26,8 @@
 
 #define NEXELL_CLK_BUS_PCLK	19
 
-#define NEXELL_CLK_MAX		20
+#define NEXELL_CLK_VIP0		20
+
+#define NEXELL_CLK_MAX		21
 
 #endif

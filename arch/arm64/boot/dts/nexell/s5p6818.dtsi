@@ -455,10 +455,11 @@
 			      <0xc00cc000 0x1000>, <0xc00cd000 0x1000>,
 			      <0xc00c8000 0x1000>, <0xc006b000 0x1000>,
 			      <0xc00ca000 0x1000>, <0xc00ae000 0x1000>,
-			      <0xc00af000 0x1000>, <0xc00b0000 0x1000>;
+			      <0xc00af000 0x1000>, <0xc00b0000 0x1000>,
+			      <0xc00c1000 0x1000>;
 			reg-names = "clkpwr", "uart0", "timer0", "timer1",
 				    "sdmmc0", "sdmmc1", "sdmmc2", "gmac",
-				    "usbhost", "mipi", "i2c0", "i2c1", "i2c2";
+				    "usbhost", "mipi", "i2c0", "i2c1", "i2c2", "vip0";
 			clocks = <&refclk>;
 			clock-names = "xin";
 			#clock-cells = <1>;
@@ -527,6 +528,25 @@
 			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL_HIGH>;
 			phys = <&usb_host_phy 1>;
 			phy-names = "usb2-phy";
+			status = "disabled";
+		};
+
+		capture: camera@c00d0000 {
+			compatible = "nexell,s5p6818-capture";
+			reg = <0xc00d0000 0x1000>, <0xc0063000 0x1000>,
+			      <0xc0011010 0x4>;
+			reg-names = "csi", "vip", "sram";
+			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clocks NEXELL_CLK_MIPI>, <&clocks NEXELL_CLK_VIP0>,
+				 <&clocks NEXELL_CLK_PLL2>;
+			clock-names = "mipi", "vip", "source";
+			resets = <&nexell_reset RESET_ID_MIPI>,
+				 <&nexell_reset RESET_ID_MIPI_CSI>,
+				 <&nexell_reset RESET_ID_MIPI_PHY_S>,
+				 <&nexell_reset RESET_ID_VIP0>,
+				 <&nexell_reset RESET_ID_MIPI_DSI>,
+				 <&nexell_reset RESET_ID_MIPI_PHY_M>;
+			reset-names = "mipi", "csi", "phy", "vip", "dsi", "phy-master";
 			status = "disabled";
 		};
 

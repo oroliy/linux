@@ -20,9 +20,10 @@ properties:
 
   reg:
     minItems: 13
-    maxItems: 13
+    maxItems: 14
 
   reg-names:
+    minItems: 13
     items:
       - const: clkpwr
       - const: uart0
@@ -37,6 +38,7 @@ properties:
       - const: i2c0
       - const: i2c1
       - const: i2c2
+      - const: vip0
 
   clocks:
     maxItems: 1

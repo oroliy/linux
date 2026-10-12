@@ -221,10 +221,11 @@
 			      <0xc00cc000 0x1000>, <0xc00cd000 0x1000>,
 			      <0xc00c8000 0x1000>, <0xc006b000 0x1000>,
 			      <0xc00ca000 0x1000>, <0xc00ae000 0x1000>,
-			      <0xc00af000 0x1000>, <0xc00b0000 0x1000>;
+			      <0xc00af000 0x1000>, <0xc00b0000 0x1000>,
+			      <0xc00c1000 0x1000>;
 			reg-names = "clkpwr", "uart0", "timer0", "timer1",
 				    "sdmmc0", "sdmmc1", "sdmmc2", "gmac",
-				    "usbhost", "mipi", "i2c0", "i2c1", "i2c2";
+				    "usbhost", "mipi", "i2c0", "i2c1", "i2c2", "vip0";
 			clocks = <&refclk>;
 			clock-names = "xin";
 			#clock-cells = <1>;

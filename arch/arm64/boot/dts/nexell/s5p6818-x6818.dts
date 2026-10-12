@@ -192,6 +192,7 @@
 
 			port {
 				ov5645_to_mipi: endpoint {
+					remote-endpoint = <&capture_in>;
 					data-lanes = <1 2>;
 					clock-noncontinuous;
 					link-frequencies = /bits/ 64 <210000000>;
@@ -421,4 +422,16 @@
 
 &tmu1 {
 	status = "okay";
+};
+
+/* RGB LCD uses simplefb; the native MIPI display node stays disabled. */
+&capture {
+	status = "okay";
+	port {
+		capture_in: endpoint {
+			remote-endpoint = <&ov5645_to_mipi>;
+			data-lanes = <1 2>;
+			clock-noncontinuous;
+		};
+	};
 };

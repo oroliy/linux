@@ -1155,11 +1155,11 @@ static int ov5645_probe(struct i2c_client *client)
 				     ARRAY_SIZE(ov5645_test_pattern_menu) - 1,
 				     0, 0, ov5645_test_pattern_menu);
 	ov5645->pixel_clock = v4l2_ctrl_new_std(&ov5645->ctrls,
-						&ov5645_ctrl_ops,
+						NULL,
 						V4L2_CID_PIXEL_RATE,
 						1, INT_MAX, 1, 1);
 	ov5645->link_freq = v4l2_ctrl_new_int_menu(&ov5645->ctrls,
-						   &ov5645_ctrl_ops,
+						   NULL,
 						   V4L2_CID_LINK_FREQ,
 						   ARRAY_SIZE(link_freq) - 1,
 						   0, link_freq);

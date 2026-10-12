@@ -328,6 +328,7 @@ static const struct nexell_clkgen_desc nexell_clkgen_descs[] = {
 	{ NEXELL_CLK_USBHOST, "usbhost", "usbhost", 0, true, false, false },
 	{ NEXELL_CLK_USBHOST_REF, "usbhost-ref", "usbhost", 1, false, false, false },
 	{ NEXELL_CLK_MIPI, "mipi", "mipi", 0, false, false, false },
+	{ NEXELL_CLK_VIP0, "vip0", "vip0", 0, true, true, false },
 	{ NEXELL_CLK_I2C0, "i2c0", "i2c0", 0, false, true, true },
 	{ NEXELL_CLK_I2C1, "i2c1", "i2c1", 0, false, true, true },
 	{ NEXELL_CLK_I2C2, "i2c2", "i2c2", 0, false, true, true },
@@ -470,6 +471,10 @@ static int nexell_clk_probe(struct platform_device *pdev)
 	ctrl->onecell->hws[NEXELL_CLK_BUS_PCLK] = bus_pclk_hw;
 
 	for (i = 0; i < ARRAY_SIZE(nexell_clkgen_descs); i++) {
+		/* Older DTBs have no VIP resource; retain their clock ABI. */
+		if (nexell_clkgen_descs[i].id == NEXELL_CLK_VIP0 &&
+		    !platform_get_resource_byname(pdev, IORESOURCE_MEM, "vip0"))
+			continue;
 		ret = nexell_clkgen_register(ctrl, &nexell_clkgen_descs[i]);
 		if (ret)
 			return ret;

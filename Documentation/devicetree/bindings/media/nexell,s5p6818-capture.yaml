@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/media/nexell,s5p6818-capture.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nexell S5P6818 CSI-2 receiver and VIP0 capture
+
+maintainers:
+  - liy <liygfg@gmail.com>
+
+description: |
+  Combined CSI-2 receiver and VIP0 clipper DMA engine. Sensor virtual channel
+  zero is routed through CSI output channel one to VIP0. The MIPI register
+  block and resets are exclusive; a native DSI display controller using the
+  same block must be disabled. RGB simple-framebuffer display is independent.
+
+properties:
+  compatible:
+    const: nexell,s5p6818-capture
+  reg:
+    items:
+      - description: MIPI CSI register block, including shared PLL
+      - description: VIP0 capture register block
+      - description: MIPI SRAM EMA tie-off register
+  reg-names:
+    items:
+      - const: csi
+      - const: vip
+      - const: sram
+  interrupts:
+    maxItems: 1
+  clocks:
+    maxItems: 3
+  clock-names:
+    items:
+      - const: mipi
+      - const: vip
+      - const: source
+  resets:
+    maxItems: 6
+  reset-names:
+    items:
+      - const: mipi
+      - const: csi
+      - const: phy
+      - const: vip
+      - const: dsi
+      - const: phy-master
+  port:
+    $ref: /schemas/graph.yaml#/$defs/port-base
+    unevaluatedProperties: false
+    properties:
+      endpoint:
+        $ref: /schemas/media/video-interfaces.yaml#
+        unevaluatedProperties: false
+        properties:
+          data-lanes:
+            items:
+              - const: 1
+              - const: 2
+        required:
+          - data-lanes
+          - remote-endpoint
+
+required:
+  - compatible
+  - reg
+  - reg-names
+  - interrupts
+  - clocks
+  - clock-names
+  - resets
+  - reset-names
+  - port
+
+additionalProperties: false

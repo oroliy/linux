@@ -18,6 +18,7 @@ obj-y += intel/
 obj-y += marvell/
 obj-y += mediatek/
 obj-y += microchip/
+obj-y += nexell/
 obj-y += nuvoton/
 obj-y += nvidia/
 obj-y += nxp/
