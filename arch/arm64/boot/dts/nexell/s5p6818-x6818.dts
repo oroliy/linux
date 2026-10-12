@@ -34,6 +34,20 @@
 		};
 	};
 
+	thermal-zones {
+		/* Monitoring only; thermal protection needs separate validation. */
+		soc0-thermal {
+			polling-delay-passive = <0>;
+			polling-delay = <2000>;
+			thermal-sensors = <&tmu0>;
+		};
+		soc1-thermal {
+			polling-delay-passive = <0>;
+			polling-delay = <2000>;
+			thermal-sensors = <&tmu1>;
+		};
+	};
+
 	gpio_keys: gpio-keys {
 		compatible = "gpio-keys-polled";
 		poll-interval = <50>;
@@ -398,5 +412,13 @@
 &uart0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_pins>;
+	status = "okay";
+};
+
+&tmu0 {
+	status = "okay";
+};
+
+&tmu1 {
 	status = "okay";
 };

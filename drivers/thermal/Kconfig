@@ -17,6 +17,19 @@ menuconfig THERMAL
 
 if THERMAL
 
+config NEXELL_S5P6818_THERMAL
+	tristate "Nexell S5P6818 temperature sensors"
+	depends on ARCH_NEXELL_S5P6818 || COMPILE_TEST
+	depends on OF
+	select MFD_SYSCON
+	select THERMAL_OF
+	help
+	  Read the two internal TMU probes using factory one-point trim.
+	  Temperatures are exposed through the thermal and hwmon interfaces.
+	  This driver uses polling and does not enable TMU interrupts.
+	  Select Y to provide early temperature monitoring on x6818 boards,
+	  or M to load the driver as a module. If unsure, say N.
+
 config THERMAL_NETLINK
 	bool "Thermal netlink management"
 	depends on NET

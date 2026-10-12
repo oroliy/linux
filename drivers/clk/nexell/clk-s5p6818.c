@@ -467,6 +467,7 @@ static int nexell_clk_probe(struct platform_device *pdev)
 						       NULL, 0, bus_pclk);
 	if (IS_ERR(bus_pclk_hw))
 		return PTR_ERR(bus_pclk_hw);
+	ctrl->onecell->hws[NEXELL_CLK_BUS_PCLK] = bus_pclk_hw;
 
 	for (i = 0; i < ARRAY_SIZE(nexell_clkgen_descs); i++) {
 		ret = nexell_clkgen_register(ctrl, &nexell_clkgen_descs[i]);

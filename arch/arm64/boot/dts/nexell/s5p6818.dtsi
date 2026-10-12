@@ -465,6 +465,33 @@
 			status = "okay";
 		};
 
+		tmu_tieoff: syscon@c0011130 {
+			compatible = "nexell,s5p6818-tmu-tieoff", "syscon";
+			reg = <0xc0011130 0x4>;
+		};
+
+		tmu0: thermal-sensor@c0096000 {
+			compatible = "nexell,s5p6818-tmu";
+			reg = <0xc0096000 0x104>;
+			clocks = <&clocks NEXELL_CLK_BUS_PCLK>;
+			clock-names = "tmu_apbif";
+			nexell,tieoff = <&tmu_tieoff>;
+			nexell,channel = <0>;
+			#thermal-sensor-cells = <0>;
+			status = "disabled";
+		};
+
+		tmu1: thermal-sensor@c0097000 {
+			compatible = "nexell,s5p6818-tmu";
+			reg = <0xc0097000 0x104>;
+			clocks = <&clocks NEXELL_CLK_BUS_PCLK>;
+			clock-names = "tmu_apbif";
+			nexell,tieoff = <&tmu_tieoff>;
+			nexell,channel = <1>;
+			#thermal-sensor-cells = <0>;
+			status = "disabled";
+		};
+
 		nexell_reset: reset-controller@c0012000 {
 			compatible = "nexell,s5p6818-reset";
 			#reset-cells = <1>;

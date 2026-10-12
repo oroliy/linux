@@ -24,6 +24,8 @@
 #define NEXELL_CLK_I2C1		17
 #define NEXELL_CLK_I2C2		18
 
-#define NEXELL_CLK_MAX		19
+#define NEXELL_CLK_BUS_PCLK	19
+
+#define NEXELL_CLK_MAX		20
 
 #endif
