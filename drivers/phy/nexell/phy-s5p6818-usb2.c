@@ -23,7 +23,10 @@
 
 #define NEXELL_USB_HOST_REFCLK		12000000UL
 
-#define NX_HOST_CON0			0x14
+#define NX_USB_TIEOFF_OFFSET		0x14
+#define NX_USB_TIEOFF_SIZE		0x14
+
+#define NX_HOST_CON0			0x00
 #define NX_HOST_CON0_SS_WORD_IF		BIT(26)
 #define NX_HOST_CON0_SS_WORD_IF_ENB	BIT(25)
 #define NX_HOST_CON0_SS_WORD_IF_16	\
@@ -35,7 +38,7 @@
 #define NX_HOST_CON0_N_OHCI_RESET_SYNC		BIT(18)
 #define NX_HOST_CON0_N_RESET_SYNC		BIT(17)
 
-#define NX_HOST_CON2			0x1c
+#define NX_HOST_CON2			0x08
 #define NX_HOST_CON2_SS_ENA_INCRX_ALIGN	BIT(28)
 #define NX_HOST_CON2_SS_ENA_INCR4		BIT(27)
 #define NX_HOST_CON2_SS_ENA_INCR8		BIT(26)
@@ -53,11 +56,11 @@
 #define NX_HOST_CON2_SS_FLADJ_VAL_NUM		6
 #define NX_HOST_CON2_SS_FLADJ_VAL_MAX		0x7
 
-#define NX_HOST_CON3			0x20
+#define NX_HOST_CON3			0x0c
 #define NX_HOST_CON3_POR_ENB		BIT(7)
 #define NX_HOST_CON3_POR_MASK		GENMASK(8, 7)
 
-#define NX_HOST_CON4			0x24
+#define NX_HOST_CON4			0x10
 #define NX_HOST_CON4_WORDINTERFACE	BIT(9)
 #define NX_HOST_CON4_WORDINTERFACE_ENB	BIT(8)
 #define NX_HOST_CON4_WORDINTERFACE_16	\
@@ -240,6 +243,7 @@ static int nexell_usb2_probe(struct platform_device *pdev)
 	struct nexell_usb2 *usb;
 	struct nexell_usb2_phy *instance;
 	struct phy_provider *provider;
+	struct resource *res, usb_regs;
 	int i;
 
 	usb = devm_kzalloc(dev, sizeof(*usb), GFP_KERNEL);
@@ -247,7 +251,17 @@ static int nexell_usb2_probe(struct platform_device *pdev)
 		return -ENOMEM;
 
 	mutex_init(&usb->lock);
-	usb->tieoff = devm_platform_ioremap_resource(pdev, 0);
+	/* TIEOFF also contains the camera SRAM control at offset 0x10.
+	 * Reserve only the USB registers, retaining the existing DT ABI.
+	 */
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	if (!res || resource_size(res) <
+	    NX_USB_TIEOFF_OFFSET + NX_USB_TIEOFF_SIZE)
+		return -EINVAL;
+	usb_regs = *res;
+	usb_regs.start += NX_USB_TIEOFF_OFFSET;
+	usb_regs.end = usb_regs.start + NX_USB_TIEOFF_SIZE - 1;
+	usb->tieoff = devm_ioremap_resource(dev, &usb_regs);
 	if (IS_ERR(usb->tieoff))
 		return PTR_ERR(usb->tieoff);
 
